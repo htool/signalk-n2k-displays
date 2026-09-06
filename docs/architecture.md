@@ -32,8 +32,29 @@ Do **not** grow `environment.displayMode`. That blob is not in the spec and coll
 
 ## Maps
 
-- Brightness: intent 0–1 → vendor SK brightness 0–1. Identity is quantize 0.1 (copy). Learned cells live in `maps.json` ([ADR 0005](adr/0005-map-persistence.md)). Native 1–10 is webapp/display, not the SK path.
-- Until F7, the source bin is `electrical.displays.mode` (`day` | `night`).
+- Brightness: intent 0–1 → vendor SK brightness 0–1. Identity is quantize 0.1 (copy). Learned cells live in `maps.json` ([ADR 0005](adr/0005-map-persistence.md)). Native 1–10 is webapp/display, not the SK path. Brightness maps stay keyed by display `day`/`night`; the source bin drives intent, not the native table.
+- Source (when control is `auto` / `auto-learning`): `mode` (`environment.mode`), `sun` (`environment.sun`), or `lux` (configured path, default `environment.outside.lux`). Same sources as bandg. Vessel-wide — intent is not per group.
+- Given source → intent (not skipper editors). Live override until the next source bin (brightness) or mode change (palette).
+
+| Source | Bin | Mode | Brightness |
+| --- | --- | --- | --- |
+| mode | `day` (anything but `night`) | day | 0.6 |
+| mode | `night` | night | 0.3 |
+| sun | nauticalDawn | night | 0.3 |
+| sun | dawn | night | 0.4 |
+| sun | sunrise | day | 0.4 |
+| sun | day | day | 0.6 |
+| sun | sunset | day | 0.4 |
+| sun | dusk | night | 0.4 |
+| sun | nauticalDusk | night | 0.3 |
+| sun | night | night | 0.2 |
+| lux | 0–1 | night | 0.2 |
+| lux | 1–10 | night | 0.3 |
+| lux | 10–100 | night | 0.4 |
+| lux | 100–1000 | day | 0.4 |
+| lux | 1000–10000 | day | 0.6 |
+| lux | ≥10000 | day | 1 |
+
 - Palette: `mode` → native color, only if the driver declares palettes. Not keyed by intent step. Not a vessel path (brands do not share names). Navico night only (default red). Raymarine day/night (defaults Day 1 / Red/Black). Garmin undeclared — hidden. Changing palette never writes brightness.
 - Only `auto-learning` stores map points. `auto` applies maps and does not train. `off` is live PUTs, nothing stored.
 

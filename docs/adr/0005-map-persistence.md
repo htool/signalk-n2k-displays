@@ -23,7 +23,7 @@ Shape:
 }
 ```
 
-Keys are device ids `vendor.group`. Intent steps are strings of the 0.1 grid. Until F7, the source bin is `electrical.displays.mode` (`day` | `night`). Palettes are mode → native color and are omitted where the driver declares none.
+Keys are device ids `vendor.group`. Intent steps are strings of the 0.1 grid. Brightness maps stay keyed by display `day`/`night`. Source bins (`environment.mode`, `environment.sun`, log-lux) drive intent; they are not native-map keys. Palettes are mode → native color and are omitted where the driver declares none.
 
 ## Why
 

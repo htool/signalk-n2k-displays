@@ -13,6 +13,8 @@ Brand-agnostic rules for Signal K instrument lighting. Load after `AGENTS.md` an
 
 Source (time / sun / lux) → intent → native per device → SK vendor paths → **signalk-to-nmea2000** → N2K.
 
+Time is `environment.mode`, sun is `environment.sun`, lux is a configured path. Sun and lux curves are given (see [architecture.md](../../docs/architecture.md)). Apply only on source-bin change so a live override survives repeated derived-data ticks.
+
 Only `auto-learning` stores maps. Identity apply (missing cell) is quantized intent on the vendor 0–1 path. Persistence is `pluginDataDir/maps.json` ([ADR 0005](../../docs/adr/0005-map-persistence.md)). Palettes are `mode` → native color, per family, not vessel intent. Palette changes never write brightness. Hide palette where the driver declares none (Navico day, Garmin).
 
 ## Encode

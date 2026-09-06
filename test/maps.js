@@ -195,7 +195,7 @@ describe('apply maps on intent PUT', function () {
     lastValue(app.messages, 'electrical.displays.raymarine.helm1.brightness').should.equal(0.5)
   })
 
-  it('uses mode as the source bin until F7', function () {
+  it('uses display mode as the brightness map key', function () {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'n2k-maps-'))
     saveMaps(dir, {
       brightness: {

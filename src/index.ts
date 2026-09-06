@@ -38,6 +38,14 @@ import {
   nativeNightModeState,
   shouldApplyMaps
 } from './maps'
+import {
+  DEFAULT_LUX_PATH,
+  parseSource,
+  SourceIntent,
+  intentFromLux,
+  intentFromMode,
+  intentFromSun
+} from './source'
 
 export default function (app: any) {
   const error = app.error
@@ -50,6 +58,8 @@ export default function (app: any) {
     mode: DEFAULTS.mode,
     control: DEFAULTS.control
   }
+  let lastReadings: { mode?: any; sun?: any; lux?: any } = {}
+  let lastSourceBin: string | undefined
 
   const plugin: Plugin = {
     start: function (properties: any) {
@@ -63,6 +73,8 @@ export default function (app: any) {
         mode: DEFAULTS.mode,
         control: DEFAULTS.control
       }
+      lastReadings = {}
+      lastSourceBin = undefined
       setupIntentPaths()
       setupRaymarineBrightness()
       setupRaymarineColor()
@@ -71,6 +83,10 @@ export default function (app: any) {
       setupSimradBrightness()
       setupSimradNightColor()
       setupSimradNightMode()
+
+      if (app.subscriptionmanager) {
+        subscribeToSources()
+      }
 
       if (properties.groupMappings && properties.groupMappings.length > 0) {
         subscribeToSimnet(properties)
@@ -106,6 +122,24 @@ export default function (app: any) {
             enum: Object.keys(raymarineColorMap),
             enumNames: Object.values(raymarineColorMap),
             default: 'day1'
+          },
+          source: {
+            type: 'string',
+            title: 'Light steering source',
+            description:
+              'Used when control is auto or auto-learning. Time is environment.mode (derived-data).',
+            enum: ['mode', 'sun', 'lux'],
+            enumNames: [
+              'Time (environment.mode)',
+              'Sun (environment.sun)',
+              'Lux'
+            ],
+            default: 'mode'
+          },
+          luxPath: {
+            type: 'string',
+            title: 'Path to outside lux',
+            default: DEFAULT_LUX_PATH
           },
           navicoGroups: {
             title: 'Enabled Navico Groups',
@@ -209,6 +243,15 @@ export default function (app: any) {
             intentDelta(putPath, parsed.value, INTENT_META[putPath])
           )
           if (shouldApplyMaps(intentState.control)) {
+            if (
+              putPath === INTENT_PATHS.control &&
+              applySourceFromReadings(true)
+            ) {
+              return {
+                state: 'COMPLETED',
+                statusCode: 200
+              }
+            }
             applyBrightnessMaps()
             if (putPath !== INTENT_PATHS.brightness) {
               applyPaletteMaps()
@@ -714,6 +757,105 @@ export default function (app: any) {
         setRaymarineDisplayColor(group, color)
       }
     })
+  }
+
+  function luxPath (): string {
+    return (props && props.luxPath) || DEFAULT_LUX_PATH
+  }
+
+  function sourceIntentFromReadings (): SourceIntent | undefined {
+    const source = parseSource(props && props.source)
+    if (source === 'sun') {
+      return intentFromSun(lastReadings.sun)
+    }
+    if (source === 'lux') {
+      return intentFromLux(lastReadings.lux)
+    }
+    return intentFromMode(lastReadings.mode)
+  }
+
+  function publishIntentState () {
+    app.handleMessage(
+      plugin.id,
+      intentDelta(
+        INTENT_PATHS.brightness,
+        intentState.brightness,
+        INTENT_META[INTENT_PATHS.brightness]
+      )
+    )
+    app.handleMessage(
+      plugin.id,
+      intentDelta(
+        INTENT_PATHS.mode,
+        intentState.mode,
+        INTENT_META[INTENT_PATHS.mode]
+      )
+    )
+  }
+
+  function applySourceFromReadings (force: boolean): boolean {
+    if (!shouldApplyMaps(intentState.control)) {
+      return false
+    }
+    const next = sourceIntentFromReadings()
+    if (!next) {
+      return false
+    }
+    if (!force && lastSourceBin === next.bin) {
+      return false
+    }
+    const modeChanged = intentState.mode !== next.mode
+    lastSourceBin = next.bin
+    intentState.brightness = next.brightness
+    intentState.mode = next.mode
+    publishIntentState()
+    applyBrightnessMaps()
+    if (force || modeChanged) {
+      applyPaletteMaps()
+    }
+    return true
+  }
+
+  function subscribeToSources () {
+    const command = {
+      context: 'vessels.self',
+      subscribe: [
+        { path: 'environment.mode' },
+        { path: 'environment.sun' },
+        { path: luxPath() }
+      ]
+    }
+    app.subscriptionmanager.subscribe(
+      command,
+      onStop,
+      subscription_error,
+      (delta: any) => {
+        if (!delta || !delta.updates) {
+          return
+        }
+        const configuredLux = luxPath()
+        delta.updates.forEach((update: any) => {
+          if (update['$source'] === plugin.id) {
+            return
+          }
+          ;(update.values || []).forEach((vp: any) => {
+            if (!vp || !vp.path) {
+              return
+            }
+            if (vp.path === 'environment.mode') {
+              lastReadings.mode = vp.value
+            } else if (vp.path === 'environment.sun') {
+              lastReadings.sun = vp.value
+            } else if (vp.path === configuredLux) {
+              lastReadings.lux = vp.value
+            } else {
+              return
+            }
+            applySourceFromReadings(false)
+          })
+        })
+      }
+    )
   }
 
   function publishVendorPath (path: string, value: any) {
