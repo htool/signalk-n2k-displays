@@ -7,6 +7,11 @@ export const INTENT_PATHS = {
   control: 'electrical.displays.control'
 }
 
+export const COMPAT_PATHS = {
+  blob: 'environment.displayMode',
+  control: 'environment.displayMode.control'
+}
+
 export const MODES = ['day', 'night'] as const
 export const CONTROLS = ['off', 'auto', 'auto-learning'] as const
 
@@ -28,6 +33,41 @@ export type IntentState = {
 export type PutResult =
   | { ok: true; value: number | DisplayMode | DisplayControl }
   | { ok: false; message: string }
+
+export type CompatPutResult =
+  | { ok: true; mode: DisplayMode; brightness: number }
+  | { ok: false; message: string }
+
+export function displayModeBlob (intent: IntentState): {
+  mode: DisplayMode
+  backlight: number
+} {
+  return {
+    mode: intent.mode,
+    backlight: Math.round(quantizeBrightness(intent.brightness) * 10)
+  }
+}
+
+export function parseCompatPut (value: any): CompatPutResult {
+  if (!value || typeof value !== 'object') {
+    return { ok: false, message: 'displayMode PUT needs { mode, backlight }' }
+  }
+  if (!isMode(value.mode)) {
+    return { ok: false, message: 'mode must be day or night' }
+  }
+  const n =
+    typeof value.backlight === 'string'
+      ? Number(value.backlight)
+      : value.backlight
+  if (typeof n !== 'number' || !isFinite(n) || n < 0 || n > 10) {
+    return { ok: false, message: 'backlight must be 0–10' }
+  }
+  return {
+    ok: true,
+    mode: value.mode,
+    brightness: quantizeBrightness(n / 10)
+  }
+}
 
 export function quantizeBrightness (value: number): number {
   const clamped = Math.min(1, Math.max(0, value))
@@ -150,4 +190,11 @@ export const INTENT_META: { [path: string]: any } = {
       { title: 'Auto-learning', value: 'auto-learning' }
     ]
   }
+}
+
+export const COMPAT_META = {
+  displayName: 'Deprecated display mode blob',
+  description:
+    'One-major mirror of electrical.displays.mode and brightness. backlight is 0–10 (brightness×10). Migrate PUTs to electrical.displays.brightness and electrical.displays.mode. group is ignored.',
+  deprecated: true
 }

@@ -7,7 +7,7 @@ Brand-agnostic rules for Signal K instrument lighting. Load after `AGENTS.md` an
 - Vessel day/night: `environment.mode` (spec).
 - Glass intent: `electrical.displays.brightness` (0–1, step 0.1), `.mode` (`day`|`night`), `.control` (`off`|`auto`|`auto-learning`).
 - Actuation: `electrical.displays.<vendor>.<group>.*` as n2k-signalk already publishes.
-- Do not put glass brightness on `environment.displayMode` except a documented one-major compat mirror.
+- Do not put glass brightness on `environment.displayMode` except the documented one-major compat mirror ([displayMode-compat.md](../../docs/displayMode-compat.md)).
 
 ## Pipeline
 

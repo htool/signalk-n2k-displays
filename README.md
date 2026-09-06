@@ -18,10 +18,14 @@ Phone-first lighting control. Bookmark `/signalk-n2k-displays/` when glass is un
 
 **Job:** Own display lighting *policy*: light steering source → intent 0–1 → per-device native brightness and palette. Write those as Signal K paths. Provide a phone-first control webapp (`off` | `auto` | `auto-learning`).
 
-**In:** Time / sun / lux steering (cascade lux → sun → time), intent paths, maps, mapping table (large screen), group sync, power-on resync, PUT on v1 paths, embeddable webapp.
+**In:** Time / sun / lux steering (cascade lux → sun → time), intent paths, maps, mapping table (large screen), group sync, power-on resync, PUT on v1 paths, one-major `environment.displayMode` mirror, embeddable webapp.
 
 **Out:** NMEA 2000 encode (that is [signalk-to-nmea2000](https://github.com/SignalK/signalk-to-nmea2000) + canboatjs). Widescreen instrument layouts ([signalk-instrument-display-plugin](https://github.com/htool/signalk-instrument-display-plugin)). HEX PGN strings. simpleCan / second bus address. Garmin keypad until a lighting write protocol exists. Server `DisplayProvider`.
 
 **Related:** [signalk-bandg-displaydaynight](https://github.com/htool/signalk-bandg-displaydaynight) becomes a stub that maps the old 1–10 blob onto intent paths and must not emit 130845.
+
+## Deprecated `environment.displayMode`
+
+For one major, this plugin mirrors `{ mode, backlight: round(brightness×10) }` and accepts the old PUT on `environment.displayMode.control`. Migrate to `electrical.displays.brightness` (0–1) and `.mode`. Details: [docs/displayMode-compat.md](docs/displayMode-compat.md).
 
 Agents: start at [AGENTS.md](AGENTS.md). Features and ADRs are under [docs/](docs/).

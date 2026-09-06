@@ -28,7 +28,7 @@ This plugin stops at vendor Signal K paths. Encode is not this plugin’s job.
 
 Reserved leaves under `electrical.displays`: `brightness`, `mode`, `control`. Do not put vendor groups in those names. Avoid subscribe wildcards that mix intent with vendor branches.
 
-Do **not** grow `environment.displayMode`. That blob is not in the spec and collides with `environment.mode`. One-major compat mirror is a listed feature, then drop it.
+Do **not** grow `environment.displayMode`. That blob is not in the spec and collides with `environment.mode`. This plugin publishes a one-major **deprecated** mirror `{ mode, backlight: round(brightness×10) }` and accepts PUT on `environment.displayMode.control`. See [displayMode-compat.md](displayMode-compat.md). Then drop it.
 
 ## Maps
 

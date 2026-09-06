@@ -31,5 +31,5 @@ Navico night mode on the wire: 2 = Day, 4 = Night.
 ## Consequences
 
 - Webapp and Node-RED PUT v1 paths, not `/plugins/<id>`.
-- Compat blob PUT is deprecated for one major ([features.md](../features.md)).
+- Compat blob PUT is deprecated for one major: [displayMode-compat.md](../displayMode-compat.md).
 - instrument-display-plugin reads `electrical.displays.brightness` for CSS filter; keeps `environment.mode` for chrome.

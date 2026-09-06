@@ -20,13 +20,17 @@ import {
   SimnetNightModeColor
 } from '@canboat/ts-pgns'
 import {
+  COMPAT_META,
+  COMPAT_PATHS,
   DEFAULTS,
   DisplayControl,
   DisplayMode,
   INTENT_META,
   INTENT_PATHS,
+  displayModeBlob,
   intentDelta,
   loadIntent,
+  parseCompatPut,
   parseIntentPut,
   saveIntent
 } from './intent'
@@ -564,6 +568,7 @@ export default function (app: any) {
             plugin.id,
             intentDelta(putPath, parsed.value, INTENT_META[putPath])
           )
+          publishCompatBlob()
           if (shouldApplyMaps(intentState.control)) {
             if (
               putPath === INTENT_PATHS.control &&
@@ -590,6 +595,60 @@ export default function (app: any) {
         intentDelta(path, initial[path], INTENT_META[path])
       )
     })
+    setupCompatDisplayMode()
+  }
+
+  function publishCompatBlob () {
+    app.handleMessage(plugin.id, {
+      updates: [
+        {
+          values: [
+            {
+              path: COMPAT_PATHS.blob,
+              value: displayModeBlob(intentState)
+            }
+          ],
+          meta: [{ path: COMPAT_PATHS.blob, value: COMPAT_META }]
+        }
+      ]
+    })
+  }
+
+  function applyCompatPut (value: any) {
+    const parsed = parseCompatPut(value)
+    if (!parsed.ok) {
+      return {
+        state: 'COMPLETED',
+        statusCode: 400,
+        message: parsed.message
+      }
+    }
+    intentState.mode = parsed.mode
+    intentState.brightness = parsed.brightness
+    persistIntent()
+    publishIntentState()
+    if (shouldApplyMaps(intentState.control)) {
+      applyBrightnessMaps()
+      applyPaletteMaps()
+    }
+    return {
+      state: 'COMPLETED',
+      statusCode: 200
+    }
+  }
+
+  function setupCompatDisplayMode () {
+    app.registerPutHandler(
+      'vessels.self',
+      COMPAT_PATHS.control,
+      (_context: string, _path: string, value: any) => applyCompatPut(value)
+    )
+    app.registerPutHandler(
+      'vessels.self',
+      COMPAT_PATHS.blob,
+      (_context: string, _path: string, value: any) => applyCompatPut(value)
+    )
+    publishCompatBlob()
   }
 
   function setupRaymarineColor () {
@@ -1120,6 +1179,7 @@ export default function (app: any) {
         INTENT_META[INTENT_PATHS.mode]
       )
     )
+    publishCompatBlob()
   }
 
   function applySourceFromReadings (force: boolean): boolean {
