@@ -9,7 +9,7 @@
 
 ## Map persistence
 
-Locked in [ADR 0005](adr/0005-map-persistence.md): `pluginDataDir/maps.json`. `auto` applies and does not write. `auto-learning` will store cells later. Palettes share the file in F6.
+Locked in [ADR 0005](adr/0005-map-persistence.md): `pluginDataDir/maps.json`. `auto` applies and does not write. `auto-learning` will store cells later. Palettes live under the `palettes` key in the same file.
 
 ## Encode
 

@@ -34,6 +34,8 @@ import {
   emptyMaps,
   loadMaps,
   mappedNative,
+  mappedPalette,
+  nativeNightModeState,
   shouldApplyMaps
 } from './maps'
 
@@ -208,6 +210,9 @@ export default function (app: any) {
           )
           if (shouldApplyMaps(intentState.control)) {
             applyBrightnessMaps()
+            if (putPath !== INTENT_PATHS.brightness) {
+              applyPaletteMaps()
+            }
           }
           return {
             state: 'COMPLETED',
@@ -665,6 +670,49 @@ export default function (app: any) {
           intentState.brightness
         )
       )
+    })
+  }
+
+  function applyPaletteMaps () {
+    if (!shouldApplyMaps(intentState.control)) {
+      return
+    }
+    const nightState = nativeNightModeState(intentState.mode)
+    const rayDefaults = {
+      day: props.raymarineDayColor,
+      night: props.raymarineNightColor
+    }
+    Object.keys(simradDisplayGroups).forEach(group => {
+      if (!groupEnabled(props.navicoGroups, group)) {
+        return
+      }
+      setSimradDisplayNightMode(group, nightState)
+      const color = mappedPalette(
+        maps,
+        deviceId('navico', group),
+        intentState.mode
+      )
+      if (color !== undefined) {
+        setSimradDisplayNightColor(group, color)
+      }
+    })
+    Object.keys(raymarineDisplayGroups).forEach(group => {
+      if (!groupEnabled(props.raymarineGroups, group)) {
+        return
+      }
+      publishVendorPath(
+        `electrical.displays.raymarine.${group}.nightMode.state`,
+        nightState
+      )
+      const color = mappedPalette(
+        maps,
+        deviceId('raymarine', group),
+        intentState.mode,
+        rayDefaults
+      )
+      if (color !== undefined) {
+        setRaymarineDisplayColor(group, color)
+      }
     })
   }
 

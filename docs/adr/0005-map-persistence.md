@@ -15,11 +15,15 @@ Shape:
       "day": { "0.5": 0.4 },
       "night": { "0.3": 0.2 }
     }
+  },
+  "palettes": {
+    "navico.group1": { "night": "green" },
+    "raymarine.helm1": { "day": "day2", "night": "inverse" }
   }
 }
 ```
 
-Keys are device ids `vendor.group`. Intent steps are strings of the 0.1 grid. Until F7, the source bin is `electrical.displays.mode` (`day` | `night`).
+Keys are device ids `vendor.group`. Intent steps are strings of the 0.1 grid. Until F7, the source bin is `electrical.displays.mode` (`day` | `night`). Palettes are mode → native color and are omitted where the driver declares none.
 
 ## Why
 
@@ -29,4 +33,4 @@ Option A fights the admin form for sparse tables. Option C is not spec and colli
 
 - Tests use a temp dir, not a running persist plugin.
 - Backup is copy `maps.json`.
-- Palettes (F6) can use the same file under a `palettes` key.
+- Palettes use the same file under a `palettes` key.

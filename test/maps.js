@@ -136,7 +136,8 @@ describe('identity brightness maps', function () {
     const maps = {
       brightness: {
         'navico.group1': { day: { '0.5': 0.4 } }
-      }
+      },
+      palettes: {}
     }
     saveMaps(dir, maps)
     fs.existsSync(mapsPath(dir)).should.equal(true)

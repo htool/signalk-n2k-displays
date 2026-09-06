@@ -34,7 +34,7 @@ Do **not** grow `environment.displayMode`. That blob is not in the spec and coll
 
 - Brightness: intent 0–1 → vendor SK brightness 0–1. Identity is quantize 0.1 (copy). Learned cells live in `maps.json` ([ADR 0005](adr/0005-map-persistence.md)). Native 1–10 is webapp/display, not the SK path.
 - Until F7, the source bin is `electrical.displays.mode` (`day` | `night`).
-- Palette: `mode` → native color, only if the driver declares palettes. Not keyed by intent step. Not a vessel path (brands do not share names).
+- Palette: `mode` → native color, only if the driver declares palettes. Not keyed by intent step. Not a vessel path (brands do not share names). Navico night only (default red). Raymarine day/night (defaults Day 1 / Red/Black). Garmin undeclared — hidden. Changing palette never writes brightness.
 - Only `auto-learning` stores map points. `auto` applies maps and does not train. `off` is live PUTs, nothing stored.
 
 Hardware gamma and the lux/sun curve are given, not skipper editors.
