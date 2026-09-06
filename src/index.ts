@@ -46,6 +46,13 @@ import {
   intentFromMode,
   intentFromSun
 } from './source'
+import {
+  configuredResyncTriggers,
+  deltaSourceId,
+  resyncTrackerKey,
+  shouldResync,
+  sourceMatches
+} from './resync'
 
 export default function (app: any) {
   const error = app.error
@@ -60,6 +67,8 @@ export default function (app: any) {
   }
   let lastReadings: { mode?: any; sun?: any; lux?: any } = {}
   let lastSourceBin: string | undefined
+  let lastSeen: { [key: string]: number } = {}
+  let hasApplied = false
 
   const plugin: Plugin = {
     start: function (properties: any) {
@@ -75,6 +84,8 @@ export default function (app: any) {
       }
       lastReadings = {}
       lastSourceBin = undefined
+      lastSeen = {}
+      hasApplied = false
       setupIntentPaths()
       setupRaymarineBrightness()
       setupRaymarineColor()
@@ -140,6 +151,35 @@ export default function (app: any) {
             type: 'string',
             title: 'Path to outside lux',
             default: DEFAULT_LUX_PATH
+          },
+          resync: {
+            title: 'Device power-on resync',
+            description:
+              'Re-apply last intent when a device path appears after silence (e.g. chartplotter boot). Path and source are case sensitive.',
+            type: 'array',
+            items: {
+              type: 'object',
+              required: ['path'],
+              properties: {
+                path: {
+                  type: 'string',
+                  title: 'Trigger path (e.g. navigation.currentRoute.name)',
+                  default: ''
+                },
+                source: {
+                  type: 'string',
+                  title:
+                    'Source ID (e.g. N2K.115). Leave empty to match any source.',
+                  default: ''
+                },
+                timeout: {
+                  type: 'number',
+                  title:
+                    'Inactivity timeout (seconds). Resend if data is seen after this many seconds of silence.',
+                  default: 60
+                }
+              }
+            }
           },
           navicoGroups: {
             title: 'Enabled Navico Groups',
@@ -682,10 +722,11 @@ export default function (app: any) {
     )
   }
 
-  function applyBrightnessMaps () {
-    if (!shouldApplyMaps(intentState.control)) {
+  function applyBrightnessMaps (force?: boolean) {
+    if (!force && !shouldApplyMaps(intentState.control)) {
       return
     }
+    hasApplied = true
     Object.keys(simradDisplayGroups).forEach(group => {
       if (!groupEnabled(props.navicoGroups, group)) {
         return
@@ -716,8 +757,8 @@ export default function (app: any) {
     })
   }
 
-  function applyPaletteMaps () {
-    if (!shouldApplyMaps(intentState.control)) {
+  function applyPaletteMaps (force?: boolean) {
+    if (!force && !shouldApplyMaps(intentState.control)) {
       return
     }
     const nightState = nativeNightModeState(intentState.mode)
@@ -816,8 +857,32 @@ export default function (app: any) {
     return true
   }
 
+  function resyncLastIntent () {
+    if (!hasApplied) {
+      return
+    }
+    applyBrightnessMaps(true)
+    applyPaletteMaps(true)
+  }
+
+  function considerResync (path: string, sourceId: string, now: number) {
+    configuredResyncTriggers(props).forEach(trigger => {
+      if (trigger.path !== path) {
+        return
+      }
+      if (!sourceMatches(trigger.source, sourceId)) {
+        return
+      }
+      const key = resyncTrackerKey(sourceId, path)
+      if (shouldResync(lastSeen[key], now, trigger.timeout)) {
+        resyncLastIntent()
+      }
+      lastSeen[key] = now
+    })
+  }
+
   function subscribeToSources () {
-    const command = {
+    const command: { context: string; subscribe: { path: string }[] } = {
       context: 'vessels.self',
       subscribe: [
         { path: 'environment.mode' },
@@ -825,6 +890,9 @@ export default function (app: any) {
         { path: luxPath() }
       ]
     }
+    configuredResyncTriggers(props).forEach(trigger => {
+      command.subscribe.push({ path: trigger.path })
+    })
     app.subscriptionmanager.subscribe(
       command,
       onStop,
@@ -834,14 +902,17 @@ export default function (app: any) {
           return
         }
         const configuredLux = luxPath()
+        const now = Date.now()
         delta.updates.forEach((update: any) => {
           if (update['$source'] === plugin.id) {
             return
           }
+          const sourceId = deltaSourceId(update, delta)
           ;(update.values || []).forEach((vp: any) => {
             if (!vp || !vp.path) {
               return
             }
+            considerResync(vp.path, sourceId, now)
             if (vp.path === 'environment.mode') {
               lastReadings.mode = vp.value
             } else if (vp.path === 'environment.sun') {

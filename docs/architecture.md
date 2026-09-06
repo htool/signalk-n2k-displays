@@ -60,6 +60,10 @@ Do **not** grow `environment.displayMode`. That blob is not in the spec and coll
 
 Hardware gamma and the lux/sun curve are given, not skipper editors.
 
+## Power-on resync
+
+A chartplotter that last ran at night can boot dark. Configure `resync` triggers (path, optional `N2K.src` source, timeout seconds). When that path appears after silence, re-apply the last intent through maps — including when control is `off`. Do not wait for the next source-bin change. No apply if intent has never been applied.
+
 ## Encode
 
 See [ADR 0004](adr/0004-converter-owns-n2k-encode.md). This plugin does not call `nmea2000out`, `nmea2000JsonOut`, or simpleCan.
