@@ -70,4 +70,4 @@ See [ADR 0004](adr/0004-converter-owns-n2k-encode.md). This plugin does not call
 
 ## Webapp
 
-Standalone `public/` webapp (bookmark `/signalk-n2k-displays/`). PUT v1 paths. Phone-first 48px targets. Chrome follows `environment.mode`. Native scale next to each instrument. Palette row omitted where undeclared (Navico in day, Garmin).
+Standalone `public/` webapp (bookmark `/signalk-n2k-displays/`). PUT v1 paths. Phone-first 48px targets. Chrome follows `environment.mode`. Intent control is 0–100% in 10% steps; the PUT value stays 0–1. Native scale next to each instrument. Palette row omitted where undeclared (Navico in day, Garmin).

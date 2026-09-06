@@ -39,7 +39,10 @@ describe('F9 control webapp', function () {
 
   it('shows native scale and hides undeclared palettes', function () {
     js.should.match(/ \/ 10/)
-    js.should.match(/n \* 100/)
+    js.should.match(/quantize\(Number\(value\)\)/)
+    html.should.match(/0–100%/)
+    js.should.match(/intentPercent\(brightness\) \+ ' %'/)
+    js.should.match(/0\.1/)
     js.should.match(/modes: \['night'\]/)
     js.should.match(/navico/)
     js.should.match(/raymarine/)

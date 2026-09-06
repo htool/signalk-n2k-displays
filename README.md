@@ -12,7 +12,7 @@ Requires signalk-server 2.3.0 or newer.
 
 Phone-first lighting control. Bookmark `/signalk-n2k-displays/` when glass is unreadable. PUT goes to v1 paths (`electrical.displays.*`), not plugin REST. Chrome follows `environment.mode`.
 
-![Display lighting webapp on a phone, night chrome, Auto and Night selected, Navico 4/10 red palette and Raymarine 40% Red/Black](docs/webapp.png)
+![Display lighting webapp on a phone, night chrome, Auto and Night selected, intent 40%, Navico 4/10 red palette and Raymarine 40% Red/Black](docs/webapp.png)
 
 ## Scope
 

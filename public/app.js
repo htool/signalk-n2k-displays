@@ -115,6 +115,10 @@
     }
   }
 
+  function intentPercent (ratio) {
+    return Math.round(quantize(ratio) * 100)
+  }
+
   function nativeLabel (vendor, ratio) {
     var n = typeof ratio === 'number' && isFinite(ratio) ? ratio : 0
     if (vendor === 'navico') {
@@ -184,7 +188,8 @@
         })
       )
     })
-    document.getElementById('bright-value').textContent = brightness.toFixed(1)
+    document.getElementById('bright-value').textContent =
+      intentPercent(brightness) + ' %'
     var mount = document.getElementById('devices')
     mount.innerHTML = ''
     var list = deviceList()
