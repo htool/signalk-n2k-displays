@@ -11,7 +11,7 @@ source (time / sun / lux / webapp)
   → NMEA 2000
 ```
 
-This plugin stops at vendor Signal K paths. Encode is not this plugin’s job.
+This plugin stops at vendor Signal K paths. Encode is not this plugin’s job. Showcase writeup: [showcase.md](showcase.md).
 
 ## Paths
 

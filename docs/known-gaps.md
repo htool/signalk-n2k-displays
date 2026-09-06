@@ -17,7 +17,7 @@ F1–F2 plus Raymarine brightness live in signalk-to-nmea2000. This plugin does 
 
 ## Scott / in-tree
 
-Showcase lives on `htool/signalk-n2k-displays` branch `showcase/instrument-lighting`. Upstream merge is a Discussion: policy + webapp in-tree vs a companion that `requires` this plugin and does not emit N2K.
+Showcase lives on `htool/signalk-n2k-displays` branch `showcase/instrument-lighting`. Writeup: [showcase.md](showcase.md). Upstream merge is a Discussion: policy + webapp in-tree vs a companion that `requires` this plugin and does not emit N2K.
 
 ## Brightness is not SI-equal on glass
 

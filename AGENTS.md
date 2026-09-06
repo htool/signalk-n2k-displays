@@ -6,11 +6,12 @@ This plugin owns **display lighting policy** for Navico/B&G and Raymarine glass:
 
 1. [README.md](README.md) — scope card (job, in, out)
 2. [docs/architecture.md](docs/architecture.md) — pipeline and path split
-3. [docs/adr/](docs/adr/) — locked decisions
-4. [docs/features.md](docs/features.md) — ordered slices; implement the next pending row only
-5. [docs/known-gaps.md](docs/known-gaps.md) — do not invent a DisplayProvider or HEX fields
-6. [skills/lighting/SKILL.md](skills/lighting/SKILL.md) — when the work is lighting, maps, or the control webapp
-7. Then `src/` — never import `signalk-server` `src/`
+3. [docs/showcase.md](docs/showcase.md) — instrument lighting showcase (F0–F14)
+4. [docs/adr/](docs/adr/) — locked decisions
+5. [docs/features.md](docs/features.md) — ordered slices; implement the next pending row only
+6. [docs/known-gaps.md](docs/known-gaps.md) — do not invent a DisplayProvider or HEX fields
+7. [skills/lighting/SKILL.md](skills/lighting/SKILL.md) — when the work is lighting, maps, or the control webapp
+8. Then `src/` — never import `signalk-server` `src/`
 
 ## Overlap
 

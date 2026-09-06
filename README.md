@@ -22,10 +22,10 @@ Phone-first lighting control. Bookmark `/signalk-n2k-displays/` when glass is un
 
 **Out:** NMEA 2000 encode (that is [signalk-to-nmea2000](https://github.com/SignalK/signalk-to-nmea2000) + canboatjs). Widescreen instrument layouts ([signalk-instrument-display-plugin](https://github.com/htool/signalk-instrument-display-plugin)). HEX PGN strings. simpleCan / second bus address. Garmin keypad until a lighting write protocol exists. Server `DisplayProvider`.
 
-**Related:** [signalk-bandg-displaydaynight](https://github.com/htool/signalk-bandg-displaydaynight) becomes a stub that maps the old 1–10 blob onto intent paths and must not emit 130845.
+**Related:** [signalk-bandg-displaydaynight](https://github.com/htool/signalk-bandg-displaydaynight) is a stub that maps the old 1–10 blob onto intent paths and does not emit 130845.
 
 ## Deprecated `environment.displayMode`
 
 For one major, this plugin mirrors `{ mode, backlight: round(brightness×10) }` and accepts the old PUT on `environment.displayMode.control`. Migrate to `electrical.displays.brightness` (0–1) and `.mode`. Details: [docs/displayMode-compat.md](docs/displayMode-compat.md).
 
-Agents: start at [AGENTS.md](AGENTS.md). Features and ADRs are under [docs/](docs/).
+Agents: start at [AGENTS.md](AGENTS.md). Features and ADRs are under [docs/](docs/). Showcase writeup: [docs/showcase.md](docs/showcase.md).

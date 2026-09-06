@@ -17,11 +17,11 @@ Done-when includes tests where the row says so.
 | F8 | n2k-displays | Power-on resync | [0002](adr/0002-control-off-auto-learning.md) | Re-apply last intent when a configured device path appears | done |
 | F9 | n2k-displays | Control webapp in `public/` | [0001](adr/0001-intent-and-actuation-paths.md), [0002](adr/0002-control-off-auto-learning.md), [0003](adr/0003-palettes-are-device-native.md) | off/auto/auto-learning, day/night, intent 0.1, native + palette. PUT v1 paths. Phone-first 48px. Chrome follows the phone light/dark setting. | done |
 | F10 | n2k-displays | Deprecated `environment.displayMode` mirror + PUT for one major | [0001](adr/0001-intent-and-actuation-paths.md) | `{ mode, backlight: round(brightness*10) }`. Document migration. | done |
-| F11 | bandg-displaydaynight | Stub: map blob PUT onto intent paths; no HEX 130845 | [0004](adr/0004-converter-owns-n2k-encode.md) | Plugin does not emit N2K. README says survivor is n2k-displays. | pending |
-| F12 | instrument-display-plugin | CSS filter from `electrical.displays.brightness` (0–1) | [0001](adr/0001-intent-and-actuation-paths.md) | Keep `environment.mode` for night chrome. Blob `.backlight` fallback until F10 is unused. | pending |
+| F11 | bandg-displaydaynight | Stub: map blob PUT onto intent paths; no HEX 130845 | [0004](adr/0004-converter-owns-n2k-encode.md) | Plugin does not emit N2K. README says survivor is n2k-displays. | done |
+| F12 | instrument-display-plugin | CSS filter from `electrical.displays.brightness` (0–1) | [0001](adr/0001-intent-and-actuation-paths.md) | Keep `environment.mode` for night chrome. Blob `.backlight` fallback until F10 is unused. | done |
 | F13 | n2k-displays | Source cascade lux → sun → time | [0006](adr/0006-source-cascade-lux-sun-mode.md) | Fresh lux wins; else sun; else `environment.mode`. Stale lux falls back. Reconnect takes over. Tests. | done |
 | F14 | n2k-displays | Mapping table in the webapp (large screen) | [0007](adr/0007-mapping-table-webapp.md), [0005](adr/0005-map-persistence.md), [0003](adr/0003-palettes-are-device-native.md) | Time / Sun / Lux (mode + brightness) plus brand Day and Night tables (Night below Day). Night palettes next to each brand’s brightness, with select for all. Lux add/remove with bandg defaults. Source curves in plugin config (webapp + admin). Native 0–100% identity-prefilled. Live lux/sun/time in table headings. Schema links to `/signalk-n2k-displays/`. Hide mapping under 900px. Tests. | done |
 
-F13 was pulled ahead of F10 during boat testing. F10 and F14 are done. Resume F11 unless a later row is named.
+F13 was pulled ahead of F10 during boat testing. F0–F14 are done. See [showcase.md](showcase.md).
 
 Out of scope for every row: Garmin keypad lighting, DisplayProvider, widescreen layouts, Naviop, simpleCan, new HEX PGN strings.
