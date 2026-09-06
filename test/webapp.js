@@ -31,10 +31,10 @@ describe('F9 control webapp', function () {
     html.should.match(/width=device-width/)
   })
 
-  it('follows environment.mode for chrome', function () {
-    js.should.match(/environment\.mode/)
-    js.should.match(/body\.classList\.toggle\('night'/)
-    css.should.match(/body\.night/)
+  it('follows the phone light/dark setting for chrome', function () {
+    css.should.match(/prefers-color-scheme:\s*dark/)
+    css.should.match(/color-scheme:\s*light dark/)
+    js.should.not.match(/environment\.mode/)
   })
 
   it('shows native scale and hides undeclared palettes', function () {

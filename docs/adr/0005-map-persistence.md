@@ -4,7 +4,7 @@
 
 Learned brightness maps live in `maps.json` under `app.getDataDirPath()` (Signal K plugin data dir). Not plugin config. Not Signal K paths.
 
-Identity maps need no file: missing cells mean `native = quantize(intent)` on the vendor 0–1 path (step 0.1). `auto` never writes the file. `auto-learning` will write cells later; F5 only applies.
+Identity maps need no file: missing cells mean `native = quantize(intent)` on the vendor 0–1 path (step 0.1). Enabling a brand/group applies that identity (plus family palette defaults) as the start mapping. `auto` never writes the file. `auto-learning` writes cells when native or palette PUT changes a device.
 
 Shape:
 

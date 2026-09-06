@@ -7,8 +7,12 @@ chai.Should()
 const {
   DEFAULT_LUX_PATH,
   LUX_CURVE,
+  LUX_STALE_MS,
   MODE_CURVE,
+  MODE_STALE_MS,
   SUN_CURVE,
+  SUN_STALE_MS,
+  intentFromCascade,
   intentFromLux,
   intentFromMode,
   intentFromSource,
@@ -138,7 +142,7 @@ describe('given source curves', function () {
     LUX_CURVE.length.should.equal(6)
   })
 
-  it('ignores paths that are not the configured source', function () {
+  it('maps a single source path for the given curves', function () {
     chai
       .expect(intentFromSource('mode', 'environment.sun', 'dawn', DEFAULT_LUX_PATH))
       .to.equal(undefined)
@@ -148,6 +152,49 @@ describe('given source curves', function () {
       50,
       DEFAULT_LUX_PATH
     ).brightness.should.equal(0.4)
+  })
+
+  it('cascades lux then sun then time', function () {
+    const now = 1e9
+    intentFromCascade(
+      {
+        lux: { value: 5000, seenAt: now },
+        sun: { value: 'dusk', seenAt: now },
+        mode: { value: 'night', seenAt: now }
+      },
+      now
+    ).should.deep.equal({
+      bin: 'lux:1000-10000',
+      mode: 'day',
+      brightness: 0.6
+    })
+    intentFromCascade(
+      {
+        lux: { value: 5000, seenAt: now - LUX_STALE_MS - 1 },
+        sun: { value: 'dusk', seenAt: now },
+        mode: { value: 'night', seenAt: now }
+      },
+      now
+    ).should.deep.equal(SUN_CURVE.dusk)
+    intentFromCascade(
+      {
+        sun: { value: 'dusk', seenAt: now - SUN_STALE_MS - 1 },
+        mode: { value: 'night', seenAt: now }
+      },
+      now
+    ).should.deep.equal(MODE_CURVE.night)
+    chai
+      .expect(
+        intentFromCascade(
+          {
+            lux: { value: 5000, seenAt: now - LUX_STALE_MS - 1 },
+            sun: { value: 'dusk', seenAt: now - SUN_STALE_MS - 1 },
+            mode: { value: 'night', seenAt: now - MODE_STALE_MS - 1 }
+          },
+          now
+        )
+      )
+      .to.equal(undefined)
   })
 })
 
@@ -161,7 +208,7 @@ describe('apply source policy', function () {
     lastValue(
       app.messages,
       'electrical.displays.navico.group1.brightness'
-    ).should.equal(0)
+    ).should.equal(1)
     lastValue(app.messages, INTENT_PATHS.mode).should.equal('day')
   })
 
@@ -213,19 +260,24 @@ describe('apply source policy', function () {
     lastValue(app.messages, INTENT_PATHS.mode).should.equal('night')
   })
 
-  it('applies given sun bins and ignores environment.mode', function () {
+  it('prefers sun over time when both are present', function () {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'n2k-src-'))
     const app = mockApp(dir)
     const plugin = createPlugin(app)
-    plugin.start(enabledOnly(['group1'], ['helm1'], { source: 'sun' }))
+    plugin.start(enabledOnly(['group1'], ['helm1']))
     app.puts[INTENT_PATHS.control]('vessels.self', INTENT_PATHS.control, 'auto')
     app.emit('environment.mode', 'night')
     lastValue(
       app.messages,
       'electrical.displays.navico.group1.brightness'
-    ).should.equal(1)
+    ).should.equal(0.3)
     app.emit('environment.sun', 'dawn')
     lastValue(app.messages, INTENT_PATHS.mode).should.equal('night')
+    lastValue(
+      app.messages,
+      'electrical.displays.navico.group1.brightness'
+    ).should.equal(0.4)
+    app.emit('environment.mode', 'night')
     lastValue(
       app.messages,
       'electrical.displays.navico.group1.brightness'
@@ -236,6 +288,26 @@ describe('apply source policy', function () {
       app.messages,
       'electrical.displays.raymarine.helm1.color'
     ).should.equal('day1')
+  })
+
+  it('prefers lux over sun and takes over again after reconnect', function () {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'n2k-src-'))
+    const app = mockApp(dir)
+    const plugin = createPlugin(app)
+    plugin.start(enabledOnly(['group1'], ['helm1']))
+    app.puts[INTENT_PATHS.control]('vessels.self', INTENT_PATHS.control, 'auto')
+    app.emit('environment.sun', 'dusk')
+    lastValue(app.messages, INTENT_PATHS.mode).should.equal('night')
+    lastValue(
+      app.messages,
+      'electrical.displays.navico.group1.brightness'
+    ).should.equal(0.4)
+    app.emit('environment.outside.lux', 5000)
+    lastValue(app.messages, INTENT_PATHS.mode).should.equal('day')
+    lastValue(
+      app.messages,
+      'electrical.displays.navico.group1.brightness'
+    ).should.equal(0.6)
   })
 
   it('applies given lux bins only when the bin changes', function () {

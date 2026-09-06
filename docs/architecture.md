@@ -33,7 +33,8 @@ Do **not** grow `environment.displayMode`. That blob is not in the spec and coll
 ## Maps
 
 - Brightness: intent 0–1 → vendor SK brightness 0–1. Identity is quantize 0.1 (copy). Learned cells live in `maps.json` ([ADR 0005](adr/0005-map-persistence.md)). Native 1–10 is webapp/display, not the SK path. Brightness maps stay keyed by display `day`/`night`; the source bin drives intent, not the native table.
-- Source (when control is `auto` / `auto-learning`): `mode` (`environment.mode`), `sun` (`environment.sun`), or `lux` (configured path, default `environment.outside.lux`). Same sources as bandg. Vessel-wide — intent is not per group.
+- When a vendor group is enabled (brand added), start that group at the mapped native for current intent (identity if no cell) and the family palette defaults. Do not publish 0. Do not write identity cells.
+- Source (when control is `auto` / `auto-learning`): cascade **lux → sun → time** ([ADR 0006](adr/0006-source-cascade-lux-sun-mode.md)). Lux is the configured path (default `environment.outside.lux`). Sun is `environment.sun`. Time is `environment.mode`. First fresh reading wins. Stale lux (15 min) falls back; stale sun/mode (5 min) fall further. Vessel-wide — intent is not per group. The old single-source config enum is unused.
 - Given source → intent (not skipper editors). Live override until the next source bin (brightness) or mode change (palette).
 
 | Source | Bin | Mode | Brightness |
@@ -70,4 +71,4 @@ See [ADR 0004](adr/0004-converter-owns-n2k-encode.md). This plugin does not call
 
 ## Webapp
 
-Standalone `public/` webapp (bookmark `/signalk-n2k-displays/`). PUT v1 paths. Phone-first 48px targets. Chrome follows `environment.mode`. Intent control is 0–100% in 10% steps; the PUT value stays 0–1. Native scale next to each instrument. Palette row omitted where undeclared (Navico in day, Garmin).
+Standalone `public/` webapp (bookmark `/signalk-n2k-displays/`). PUT v1 paths. Phone-first 48px targets. Chrome follows the phone `prefers-color-scheme` setting, not vessel `environment.mode`. Intent control is 0–100% in 10% steps; the PUT value stays 0–1. Native scale next to each instrument. Palette row omitted where undeclared (Navico in day, Garmin).

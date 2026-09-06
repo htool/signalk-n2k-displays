@@ -1,4 +1,5 @@
 :root {
+  color-scheme: light dark;
   --bg: #e8ecf0;
   --fg: #12161c;
   --muted: #4a5560;
@@ -12,16 +13,18 @@
   --hit-size: 48px;
 }
 
-body.night {
-  --bg: #0c1014;
-  --fg: #e8c07a;
-  --muted: #a68b55;
-  --card: #161c22;
-  --line: #2a3340;
-  --hit: #3a2a14;
-  --hit-fg: #e8c07a;
-  --on: #8a5a12;
-  --on-fg: #fff4d6;
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0c1014;
+    --fg: #e8c07a;
+    --muted: #a68b55;
+    --card: #161c22;
+    --line: #2a3340;
+    --hit: #3a2a14;
+    --hit-fg: #e8c07a;
+    --on: #8a5a12;
+    --on-fg: #fff4d6;
+  }
 }
 
 * {

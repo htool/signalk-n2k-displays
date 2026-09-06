@@ -103,3 +103,48 @@ export function intentFromSource (
   }
   return undefined
 }
+
+export type SourceReading = {
+  value: any
+  seenAt: number
+}
+
+export type SourceReadings = {
+  lux?: SourceReading
+  sun?: SourceReading
+  mode?: SourceReading
+}
+
+export const LUX_STALE_MS = 15 * 60 * 1000
+export const SUN_STALE_MS = 5 * 60 * 1000
+export const MODE_STALE_MS = 5 * 60 * 1000
+
+function fresh (
+  reading: SourceReading | undefined,
+  now: number,
+  maxAge: number
+): boolean {
+  return !!(reading && now - reading.seenAt <= maxAge)
+}
+
+export function intentFromCascade (
+  readings: SourceReadings,
+  now: number = Date.now()
+): SourceIntent | undefined {
+  if (fresh(readings.lux, now, LUX_STALE_MS)) {
+    const next = intentFromLux(readings.lux && readings.lux.value)
+    if (next) {
+      return next
+    }
+  }
+  if (fresh(readings.sun, now, SUN_STALE_MS)) {
+    const next = intentFromSun(readings.sun && readings.sun.value)
+    if (next) {
+      return next
+    }
+  }
+  if (fresh(readings.mode, now, MODE_STALE_MS)) {
+    return intentFromMode(readings.mode && readings.mode.value)
+  }
+  return undefined
+}

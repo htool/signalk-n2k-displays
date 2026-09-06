@@ -71,4 +71,18 @@ describe('intent paths', function () {
     DEFAULTS.mode.should.equal('day')
     DEFAULTS.control.should.equal('off')
   })
+
+  it('roundtrips last intent in the plugin data dir', function () {
+    const fs = require('fs')
+    const os = require('os')
+    const path = require('path')
+    const { loadIntent, saveIntent } = require('../dist/intent')
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'n2k-intent-'))
+    saveIntent(dir, { brightness: 0.54, mode: 'night', control: 'auto' })
+    loadIntent(dir).should.deep.equal({
+      brightness: 0.5,
+      mode: 'night',
+      control: 'auto'
+    })
+  })
 })

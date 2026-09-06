@@ -157,16 +157,24 @@ describe('power-on resync', function () {
   }
   const n2k17 = { label: 'N2K', src: 17 }
 
-  it('does not resync before intent has been applied', function () {
+  it('start mapping counts as applied so power-on can resync', function () {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'n2k-rs-'))
     const app = mockApp(dir)
     const plugin = createPlugin(app)
     plugin.start(enabledOnly(['group1'], ['helm1'], { resync: [trigger] }))
-    app.emit('navigation.currentRoute.name', 'Home', n2k17)
     lastValue(
       app.messages,
       'electrical.displays.navico.group1.brightness'
-    ).should.equal(0)
+    ).should.equal(1)
+    const before = countPath(
+      app.messages,
+      'electrical.displays.navico.group1.brightness'
+    )
+    app.emit('navigation.currentRoute.name', 'Home', n2k17)
+    countPath(
+      app.messages,
+      'electrical.displays.navico.group1.brightness'
+    ).should.equal(before + 1)
   })
 
   it('re-applies last intent when the path appears', function () {

@@ -41,7 +41,6 @@
   }
 
   var demo = /(?:\?|&)demo=1(?:&|$)/.test(location.search)
-  var vesselMode = 'day'
   var brightness = 1
   var glassMode = 'day'
   var control = 'off'
@@ -74,10 +73,6 @@
   }
 
   function applyPath (path, value) {
-    if (path === 'environment.mode') {
-      vesselMode = value === 'night' ? 'night' : 'day'
-      return
-    }
     if (path === INTENT.brightness) {
       brightness = quantize(Number(value))
       return
@@ -162,7 +157,6 @@
   }
 
   function render () {
-    document.body.classList.toggle('night', vesselMode === 'night')
     var controlRow = document.getElementById('control-row')
     controlRow.innerHTML = ''
     ;[
@@ -299,10 +293,7 @@
     var flat = {}
     flatten(tree, '', flat)
     Object.keys(flat).forEach(function (path) {
-      if (
-        path.indexOf('electrical.displays') === 0 ||
-        path === 'environment.mode'
-      ) {
+      if (path.indexOf('electrical.displays') === 0) {
         applyPath(path, flat[path])
       }
     })
@@ -319,8 +310,7 @@
         JSON.stringify({
           context: 'vessels.self',
           subscribe: [
-            { path: 'electrical.displays.*', period: 1000 },
-            { path: 'environment.mode', period: 1000 }
+            { path: 'electrical.displays.*', period: 1000 }
           ]
         })
       )
@@ -351,7 +341,6 @@
 
   function seedDemo () {
     statusEl.textContent = ''
-    applyPath('environment.mode', 'night')
     applyPath(INTENT.control, 'auto')
     applyPath(INTENT.mode, 'night')
     applyPath(INTENT.brightness, 0.4)

@@ -42,6 +42,48 @@ export function shouldApplyMaps (control: DisplayControl): boolean {
   return control === 'auto' || control === 'auto-learning'
 }
 
+export function shouldLearn (control: DisplayControl): boolean {
+  return control === 'auto-learning'
+}
+
+export function storeNativeCell (
+  maps: BrightnessMaps,
+  id: string,
+  mode: DisplayMode,
+  intent: number,
+  native: number
+): void {
+  const step = String(quantizeBrightness(intent))
+  const value = quantizeBrightness(native)
+  if (!maps.brightness[id]) {
+    maps.brightness[id] = {}
+  }
+  if (!maps.brightness[id][mode]) {
+    maps.brightness[id][mode] = {}
+  }
+  maps.brightness[id][mode]![step] = value
+}
+
+export function storePaletteCell (
+  maps: BrightnessMaps,
+  id: string,
+  mode: DisplayMode,
+  color: string
+): boolean {
+  const vendor = vendorOf(id)
+  if (!paletteDeclared(vendor, mode)) {
+    return false
+  }
+  if (allowedColors(vendor, mode).indexOf(color) === -1) {
+    return false
+  }
+  if (!maps.palettes[id]) {
+    maps.palettes[id] = {}
+  }
+  maps.palettes[id][mode] = color
+  return true
+}
+
 export function identityNative (intent: number): number {
   return quantizeBrightness(intent)
 }

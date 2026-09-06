@@ -152,8 +152,8 @@ describe('apply maps on intent PUT', function () {
     const plugin = createPlugin(app)
     plugin.start(enabledOnly(['group1'], ['helm1']))
     app.puts[INTENT_PATHS.brightness]('vessels.self', INTENT_PATHS.brightness, 0.54)
-    chai.expect(lastValue(app.messages, 'electrical.displays.navico.group1.brightness')).to.equal(0)
-    chai.expect(lastValue(app.messages, 'electrical.displays.raymarine.helm1.brightness')).to.equal(0)
+    lastValue(app.messages, 'electrical.displays.navico.group1.brightness').should.equal(1)
+    lastValue(app.messages, 'electrical.displays.raymarine.helm1.brightness').should.equal(1)
   })
 
   it('identity-applies enabled groups when switching to auto', function () {
@@ -213,5 +213,71 @@ describe('apply maps on intent PUT', function () {
     lastValue(app.messages, 'electrical.displays.navico.group1.brightness').should.equal(0.3)
     app.puts[INTENT_PATHS.mode]('vessels.self', INTENT_PATHS.mode, 'night')
     lastValue(app.messages, 'electrical.displays.navico.group1.brightness').should.equal(0.1)
+  })
+})
+
+describe('start mapping when a brand is enabled', function () {
+  it('starts enabled groups at identity of current intent, not 0', function () {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'n2k-maps-'))
+    const app = mockApp(dir)
+    const plugin = createPlugin(app)
+    plugin.start(enabledOnly(['group1'], ['helm1']))
+    lastValue(app.messages, 'electrical.displays.navico.group1.brightness').should.equal(1)
+    lastValue(app.messages, 'electrical.displays.raymarine.helm1.brightness').should.equal(1)
+    chai.expect(lastValue(app.messages, 'electrical.displays.navico.group2.brightness')).to.equal(undefined)
+    fs.existsSync(mapsPath(dir)).should.equal(false)
+  })
+
+  it('starts palettes at family defaults', function () {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'n2k-maps-'))
+    const app = mockApp(dir)
+    const plugin = createPlugin(app)
+    plugin.start(enabledOnly(['group1'], ['helm1']))
+    lastValue(app.messages, 'electrical.displays.raymarine.helm1.color').should.equal('day1')
+    lastValue(
+      app.messages,
+      'electrical.displays.navico.group1.nightMode.state'
+    ).should.equal(0)
+  })
+
+  it('uses a stored cell when the brand is added', function () {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'n2k-maps-'))
+    saveMaps(dir, {
+      brightness: {
+        'navico.group1': { day: { '1': 0.4 } }
+      },
+      palettes: {
+        'raymarine.helm1': { day: 'day2' }
+      }
+    })
+    const app = mockApp(dir)
+    const plugin = createPlugin(app)
+    plugin.start(enabledOnly(['group1'], ['helm1']))
+    lastValue(app.messages, 'electrical.displays.navico.group1.brightness').should.equal(0.4)
+    lastValue(app.messages, 'electrical.displays.raymarine.helm1.brightness').should.equal(1)
+    lastValue(app.messages, 'electrical.displays.raymarine.helm1.color').should.equal('day2')
+  })
+
+  it('stores a native cell on instrument PUT while auto-learning', function () {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'n2k-maps-'))
+    const app = mockApp(dir)
+    const plugin = createPlugin(app)
+    plugin.start(enabledOnly(['group1'], ['helm1']))
+    app.puts[INTENT_PATHS.control](
+      'vessels.self',
+      INTENT_PATHS.control,
+      'auto-learning'
+    )
+    app.puts[INTENT_PATHS.brightness](
+      'vessels.self',
+      INTENT_PATHS.brightness,
+      0.4
+    )
+    app.puts['electrical.displays.navico.group1.brightness'](
+      'vessels.self',
+      'electrical.displays.navico.group1.brightness',
+      0.2
+    )
+    loadMaps(dir).brightness['navico.group1'].day['0.4'].should.equal(0.2)
   })
 })

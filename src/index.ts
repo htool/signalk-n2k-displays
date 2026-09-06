@@ -26,7 +26,9 @@ import {
   INTENT_META,
   INTENT_PATHS,
   intentDelta,
-  parseIntentPut
+  loadIntent,
+  parseIntentPut,
+  saveIntent
 } from './intent'
 import {
   BrightnessMaps,
@@ -36,15 +38,17 @@ import {
   mappedNative,
   mappedPalette,
   nativeNightModeState,
-  shouldApplyMaps
+  saveMaps,
+  shouldApplyMaps,
+  shouldLearn,
+  storeNativeCell,
+  storePaletteCell
 } from './maps'
 import {
   DEFAULT_LUX_PATH,
-  parseSource,
   SourceIntent,
-  intentFromLux,
-  intentFromMode,
-  intentFromSun
+  SourceReadings,
+  intentFromCascade
 } from './source'
 import {
   configuredResyncTriggers,
@@ -65,7 +69,7 @@ export default function (app: any) {
     mode: DEFAULTS.mode,
     control: DEFAULTS.control
   }
-  let lastReadings: { mode?: any; sun?: any; lux?: any } = {}
+  let lastReadings: SourceReadings = {}
   let lastSourceBin: string | undefined
   let lastSeen: { [key: string]: number } = {}
   let hasApplied = false
@@ -77,11 +81,14 @@ export default function (app: any) {
         typeof app.getDataDirPath === 'function'
           ? loadMaps(app.getDataDirPath())
           : emptyMaps()
-      intentState = {
-        brightness: DEFAULTS.brightness,
-        mode: DEFAULTS.mode,
-        control: DEFAULTS.control
-      }
+      intentState =
+        typeof app.getDataDirPath === 'function'
+          ? loadIntent(app.getDataDirPath())
+          : {
+              brightness: DEFAULTS.brightness,
+              mode: DEFAULTS.mode,
+              control: DEFAULTS.control
+            }
       lastReadings = {}
       lastSourceBin = undefined
       lastSeen = {}
@@ -103,6 +110,7 @@ export default function (app: any) {
         subscribeToSimnet(properties)
         subscribeToRaymarine(properties)
       }
+      applyStartMapping()
     },
 
     stop: function () {
@@ -136,16 +144,16 @@ export default function (app: any) {
           },
           source: {
             type: 'string',
-            title: 'Light steering source',
+            title: 'Light steering source (unused)',
             description:
-              'Used when control is auto or auto-learning. Time is environment.mode (derived-data).',
+              'Legacy. Auto uses lux, then sun, then time (environment.mode). See ADR 0006.',
             enum: ['mode', 'sun', 'lux'],
             enumNames: [
               'Time (environment.mode)',
               'Sun (environment.sun)',
               'Lux'
             ],
-            default: 'mode'
+            default: 'lux'
           },
           luxPath: {
             type: 'string',
@@ -252,11 +260,60 @@ export default function (app: any) {
     }
   }
 
+  function dataDir (): string | undefined {
+    return typeof app.getDataDirPath === 'function'
+      ? app.getDataDirPath()
+      : undefined
+  }
+
+  function persistIntent () {
+    const dir = dataDir()
+    if (dir) {
+      saveIntent(dir, intentState)
+    }
+  }
+
+  function persistMaps () {
+    const dir = dataDir()
+    if (dir) {
+      saveMaps(dir, maps)
+    }
+  }
+
+  function groupMappings (): any[] {
+    return (props && props.groupMappings) || []
+  }
+
+  function learnNative (vendor: string, group: string, native: number) {
+    if (!shouldLearn(intentState.control)) {
+      return
+    }
+    storeNativeCell(
+      maps,
+      deviceId(vendor, group),
+      intentState.mode,
+      intentState.brightness,
+      native
+    )
+    persistMaps()
+  }
+
+  function learnPalette (vendor: string, group: string, color: string) {
+    if (!shouldLearn(intentState.control)) {
+      return
+    }
+    if (
+      storePaletteCell(maps, deviceId(vendor, group), intentState.mode, color)
+    ) {
+      persistMaps()
+    }
+  }
+
   function setupIntentPaths () {
     const initial: { [path: string]: any } = {
-      [INTENT_PATHS.brightness]: DEFAULTS.brightness,
-      [INTENT_PATHS.mode]: DEFAULTS.mode,
-      [INTENT_PATHS.control]: DEFAULTS.control
+      [INTENT_PATHS.brightness]: intentState.brightness,
+      [INTENT_PATHS.mode]: intentState.mode,
+      [INTENT_PATHS.control]: intentState.control
     }
     Object.keys(initial).forEach(path => {
       app.registerPutHandler(
@@ -278,6 +335,7 @@ export default function (app: any) {
           } else if (putPath === INTENT_PATHS.control) {
             intentState.control = parsed.value as DisplayControl
           }
+          persistIntent()
           app.handleMessage(
             plugin.id,
             intentDelta(putPath, parsed.value, INTENT_META[putPath])
@@ -326,6 +384,7 @@ export default function (app: any) {
         path,
         (context: string, path: string, value: any, cb: any) => {
           setRaymarineDisplayColor(group, value)
+          learnPalette('raymarine', group, value)
           app.handleMessage(plugin.id, {
             updates: [
               {
@@ -392,6 +451,7 @@ export default function (app: any) {
         path,
         (context: string, path: string, value: any, cb: any) => {
           setRaymarineDisplayBrightness(group, value)
+          learnNative('raymarine', group, value)
           app.handleMessage(plugin.id, {
             updates: [
               {
@@ -405,7 +465,7 @@ export default function (app: any) {
             ]
           })
 
-          const mapping = props.groupMappings.find((mapping: any) => {
+          const mapping = groupMappings().find((mapping: any) => {
             return mapping.raymarineGroup === group
           })
           if (mapping) {
@@ -470,7 +530,7 @@ export default function (app: any) {
               }
             ]
           })
-          const mapping = props.groupMappings.find((mapping: any) => {
+          const mapping = groupMappings().find((mapping: any) => {
             return mapping.raymarineGroup === group
           })
           if (mapping) {
@@ -527,6 +587,7 @@ export default function (app: any) {
         path,
         (context: string, path: string, value: any, cb: any) => {
           setSimradDisplayNightColor(group, value)
+          learnPalette('navico', group, value)
           app.handleMessage(plugin.id, {
             updates: [
               {
@@ -595,6 +656,7 @@ export default function (app: any) {
         path,
         (context: string, path: string, value: any, cb: any) => {
           setSimradDisplayBrightness(group, value)
+          learnNative('navico', group, value)
           app.handleMessage(plugin.id, {
             updates: [
               {
@@ -607,7 +669,7 @@ export default function (app: any) {
               }
             ]
           })
-          const mapping = props.groupMappings.find((mapping: any) => {
+          const mapping = groupMappings().find((mapping: any) => {
             return mapping.simradGroup === group
           })
           if (mapping) {
@@ -672,7 +734,7 @@ export default function (app: any) {
               }
             ]
           })
-          const mapping = props.groupMappings.find((mapping: any) => {
+          const mapping = groupMappings().find((mapping: any) => {
             return mapping.simradGroup === group
           })
           if (mapping) {
@@ -720,6 +782,11 @@ export default function (app: any) {
       groupsConfig[group] !== undefined &&
       groupsConfig[group] === false
     )
+  }
+
+  function applyStartMapping () {
+    applyBrightnessMaps(true)
+    applyPaletteMaps(true)
   }
 
   function applyBrightnessMaps (force?: boolean) {
@@ -805,14 +872,7 @@ export default function (app: any) {
   }
 
   function sourceIntentFromReadings (): SourceIntent | undefined {
-    const source = parseSource(props && props.source)
-    if (source === 'sun') {
-      return intentFromSun(lastReadings.sun)
-    }
-    if (source === 'lux') {
-      return intentFromLux(lastReadings.lux)
-    }
-    return intentFromMode(lastReadings.mode)
+    return intentFromCascade(lastReadings)
   }
 
   function publishIntentState () {
@@ -849,6 +909,7 @@ export default function (app: any) {
     lastSourceBin = next.bin
     intentState.brightness = next.brightness
     intentState.mode = next.mode
+    persistIntent()
     publishIntentState()
     applyBrightnessMaps()
     if (force || modeChanged) {
@@ -914,11 +975,11 @@ export default function (app: any) {
             }
             considerResync(vp.path, sourceId, now)
             if (vp.path === 'environment.mode') {
-              lastReadings.mode = vp.value
+              lastReadings.mode = { value: vp.value, seenAt: now }
             } else if (vp.path === 'environment.sun') {
-              lastReadings.sun = vp.value
+              lastReadings.sun = { value: vp.value, seenAt: now }
             } else if (vp.path === configuredLux) {
-              lastReadings.lux = vp.value
+              lastReadings.lux = { value: vp.value, seenAt: now }
             } else {
               return
             }
