@@ -67,3 +67,7 @@ A chartplotter that last ran at night can boot dark. Configure `resync` triggers
 ## Encode
 
 See [ADR 0004](adr/0004-converter-owns-n2k-encode.md). This plugin does not call `nmea2000out`, `nmea2000JsonOut`, or simpleCan.
+
+## Webapp
+
+Standalone `public/` webapp (bookmark `/signalk-n2k-displays/`). PUT v1 paths. Phone-first 48px targets. Chrome follows `environment.mode`. Native scale next to each instrument. Palette row omitted where undeclared (Navico in day, Garmin).

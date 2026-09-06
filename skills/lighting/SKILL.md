@@ -23,7 +23,7 @@ Plugins write Signal K. Converters encode. HEX only when the PGN is not understo
 
 ## Webapp (if present)
 
-PUT v1 paths, not `/plugins/<id>`. Phone-first, 48px targets. Chrome follows `environment.mode`. Show native scale next to per-instrument values. Hide palette where the driver declares none.
+PUT v1 paths, not `/plugins/<id>`. Phone-first, 48px targets. Chrome follows `environment.mode`. Show native scale next to per-instrument values. Hide palette where the driver declares none. Bookmark `/signalk-n2k-displays/` when glass is unreadable.
 
 ## Tests
 

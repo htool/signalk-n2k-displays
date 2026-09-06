@@ -12,7 +12,8 @@
     "release": "git tag -d v$npm_package_version ; git tag v$npm_package_version && git push --tags && git push && npm run create-release"
   },
   "keywords": [
-    "signalk-node-server-plugin"
+    "signalk-node-server-plugin",
+    "signalk-webapp"
   ],
   "author": "scott@scottbender.net",
   "license": "Apache-2.0",
@@ -34,5 +35,8 @@
     "chai": "^4.1.2",
     "mocha": "^5.0.0"
   },
-  "signalk-plugin-enabled-by-default": true
+  "signalk-plugin-enabled-by-default": true,
+  "signalk": {
+    "displayName": "Display lighting"
+  }
 }

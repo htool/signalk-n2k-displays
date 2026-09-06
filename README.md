@@ -8,6 +8,12 @@ The plugin can also sync between the device manufacturers. So if you change brig
 
 Requires signalk-server 2.3.0 or newer.
 
+## Control webapp
+
+Phone-first lighting control. Bookmark `/signalk-n2k-displays/` when glass is unreadable. PUT goes to v1 paths (`electrical.displays.*`), not plugin REST. Chrome follows `environment.mode`.
+
+![Display lighting webapp on a phone, night chrome, Auto and Night selected, Navico 4/10 red palette and Raymarine 40% Red/Black](docs/webapp.png)
+
 ## Scope
 
 **Job:** Own display lighting *policy*: light steering source → intent 0–1 → per-device native brightness and palette. Write those as Signal K paths. Provide a phone-first control webapp (`off` | `auto` | `auto-learning`).

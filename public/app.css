@@ -1,0 +1,179 @@
+:root {
+  --bg: #e8ecf0;
+  --fg: #12161c;
+  --muted: #4a5560;
+  --card: #ffffff;
+  --line: #c5ced6;
+  --hit: #1b3a57;
+  --hit-fg: #ffffff;
+  --on: #0b6e4f;
+  --on-fg: #ffffff;
+  --pad: 16px;
+  --hit-size: 48px;
+}
+
+body.night {
+  --bg: #0c1014;
+  --fg: #e8c07a;
+  --muted: #a68b55;
+  --card: #161c22;
+  --line: #2a3340;
+  --hit: #3a2a14;
+  --hit-fg: #e8c07a;
+  --on: #8a5a12;
+  --on-fg: #fff4d6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+body {
+  min-height: 100vh;
+}
+
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: calc(12px + env(safe-area-inset-top)) var(--pad)
+    calc(24px + env(safe-area-inset-bottom));
+}
+
+.top h1 {
+  margin: 0 0 4px;
+  font-size: 1.35rem;
+}
+
+.status {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.status:empty {
+  display: none;
+}
+
+.block {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.block h2 {
+  margin: 0 0 10px;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+}
+
+.row > .hit {
+  flex: 1;
+}
+
+.hit {
+  min-height: var(--hit-size);
+  min-width: var(--hit-size);
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--fg);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.hit.on {
+  background: var(--on);
+  border-color: var(--on);
+  color: var(--on-fg);
+}
+
+.hit:active {
+  transform: scale(0.98);
+}
+
+.bright {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.bright-read {
+  flex: 1;
+  text-align: center;
+}
+
+#bright-value {
+  display: block;
+  font-size: 2rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.hint {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.device {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  margin-top: 12px;
+}
+
+.device:first-child {
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.device h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.native {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.native-read {
+  flex: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.palette .hit {
+  flex: 1 1 30%;
+}
+
+.empty {
+  color: var(--muted);
+  margin: 0;
+}
