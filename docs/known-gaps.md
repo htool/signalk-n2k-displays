@@ -19,9 +19,9 @@ Do not lock until the map feature starts. Options:
 
 B is the likely default for tests.
 
-## Encode window
+## Encode
 
-Until signalk-to-nmea2000 has Navico 130845 and Raymarine color, this plugin still emits JSON PGN (`nmea2000JsonOut`). That is a window, not the end state ([ADR 0004](adr/0004-converter-owns-n2k-encode.md)). Do not add HEX.
+F1–F2 plus Raymarine brightness live in signalk-to-nmea2000. This plugin does not emit `nmea2000JsonOut` or `nmea2000out` for display lighting ([ADR 0004](adr/0004-converter-owns-n2k-encode.md)). Enable the Navico and Raymarine display conversions on the converter.
 
 ## Scott / in-tree
 

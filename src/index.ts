@@ -14,16 +14,10 @@
  */
 
 import {
-  PGN,
-  PGN_126720_Seatalk1DisplayBrightness,
-  PGN_126720_Seatalk1DisplayColor,
-  PGN_130845_SimnetKeyValue,
-  SeatalkShared,
   SeatalkNetworkGroup,
   SeatalkDisplayColor,
   SimnetDisplayGroup,
-  SimnetNightModeColor,
-  convertCamelCase
+  SimnetNightModeColor
 } from '@canboat/ts-pgns'
 import {
   DEFAULTS,
@@ -55,14 +49,6 @@ export default function (app: any) {
         subscribeToSimnet(properties)
         subscribeToRaymarine(properties)
       }
-
-      app.on('nmea2000OutAvailable', () => {
-        app.debug('requesting Raymarine display info...')
-        app.emit(
-          'nmea2000out',
-          '2024-06-28T14:51:57.933Z,2,126720,0,255,12,3b,9f,8c,10,03,01,3C,00,B0,04,FF,FF'
-        )
-      })
     },
 
     stop: function () {
@@ -605,27 +591,14 @@ export default function (app: any) {
     })
   }
 
-  function setRaymarineDisplayBrightness (group: string, value: number) {
-    app.emit(
-      'nmea2000JsonOut',
-      convertCamelCase(
-        app,
-        new PGN_126720_Seatalk1DisplayBrightness({
-          group: raymarineDisplayGroups[group],
-          shared: SeatalkShared.Shared,
-          brightness: value * 100,
-          unknown2: 0
-        })
-      )
-    )
-
+  function publishVendorPath (path: string, value: any) {
     app.handleMessage(plugin.id, {
       updates: [
         {
           values: [
             {
-              path: `electrical.displays.raymarine.${group}.brightness`,
-              value: value
+              path,
+              value
             }
           ]
         }
@@ -633,109 +606,42 @@ export default function (app: any) {
     })
   }
 
-  function setRaymarineDisplayColor (group: string, value: string) {
-    let pgn = convertCamelCase(
-      app,
-      new PGN_126720_Seatalk1DisplayColor({
-        group: raymarineDisplayGroups[group],
-        unknown1: 1,
-        shared: 1,
-        color: raymarineColorMap[value],
-        unknown2: 0
-      } as any)
+  function setRaymarineDisplayBrightness (group: string, value: number) {
+    publishVendorPath(
+      `electrical.displays.raymarine.${group}.brightness`,
+      value
     )
-    app.emit('nmea2000JsonOut', pgn)
+  }
+
+  function setRaymarineDisplayColor (group: string, value: string) {
+    publishVendorPath(`electrical.displays.raymarine.${group}.color`, value)
   }
 
   function setRaymarineDisplayNightMode (group: string, value: number) {
     const dayColor = props.raymarineDayColor || 'day1'
     const nightColor = props.raymarineNightColor || 'red/black'
     setRaymarineDisplayColor(group, value === 1 ? nightColor : dayColor)
-    app.handleMessage(plugin.id, {
-      updates: [
-        {
-          values: [
-            {
-              path: `electrical.displays.raymarine.${group}.nightMode.state`,
-              value: value
-            }
-          ]
-        }
-      ]
-    })
+    publishVendorPath(
+      `electrical.displays.raymarine.${group}.nightMode.state`,
+      value
+    )
   }
 
   function setSimradDisplayBrightness (group: string, value: number) {
-    app.emit(
-      'nmea2000JsonOut',
-      convertCamelCase(
-        app,
-        new PGN_130845_SimnetKeyValue({
-          displayGroup: simradDisplayGroups[group],
-          key: 'Backlight level',
-          spare9: 0,
-          minlength: 1,
-          value: value * 100
-        })
-      )
-    )
-
-    app.handleMessage(plugin.id, {
-      updates: [
-        {
-          values: [
-            {
-              path: `electrical.displays.navico.${group}.brightness`,
-              value: value
-            }
-          ]
-        }
-      ]
-    })
+    publishVendorPath(`electrical.displays.navico.${group}.brightness`, value)
   }
 
   function setSimradDisplayNightMode (group: string, value: number) {
-    app.emit(
-      'nmea2000JsonOut',
-      convertCamelCase(
-        app,
-        new PGN_130845_SimnetKeyValue({
-          displayGroup: simradDisplayGroups[group],
-          key: 'Night mode',
-          spare9: 0,
-          minlength: 1,
-          value: value == 1 ? 4 : 2
-        })
-      )
+    publishVendorPath(
+      `electrical.displays.navico.${group}.nightMode.state`,
+      value
     )
-
-    app.handleMessage(plugin.id, {
-      updates: [
-        {
-          values: [
-            {
-              path: `electrical.displays.navico.${group}.nightMode.state`,
-              value: value
-            }
-          ]
-        }
-      ]
-    })
   }
 
   function setSimradDisplayNightColor (group: string, value: string) {
-    app.emit(
-      'nmea2000JsonOut',
-      convertCamelCase(
-        app,
-        new PGN_130845_SimnetKeyValue({
-          displayGroup: simradDisplayGroups[group],
-          key: 'Night mode color',
-          spare9: 0,
-          minlength: 1,
-          value: simradDisplayNightColors[value]
-        })
-      )
+    publishVendorPath(
+      `electrical.displays.navico.${group}.nightModeColor`,
+      value
     )
   }
 
