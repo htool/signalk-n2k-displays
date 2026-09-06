@@ -3,7 +3,7 @@
 ## Not this plugin
 
 - No `DisplayProvider` in the server. File a core gap if that is needed later; do not invent one here.
-- Plugin HTTP routes are admin-only. The webapp PUTs v1 paths (`electrical.displays.*`). Extra auth UX for phone PUT is unresolved.
+- Plugin HTTP routes are admin-only. Live webapp control PUTs v1 paths (`electrical.displays.*`). Mapping GET/PUT `/plugins/signalk-n2k-displays/mapping` writes the same plugin options as the admin Time/Sun/Lux fields. Extra auth UX for phone PUT is unresolved.
 - Garmin lighting write protocol is missing. Do not HEX-guess.
 - House theme packs (Freeboard/KIP) are not this job.
 

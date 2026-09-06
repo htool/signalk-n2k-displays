@@ -13,7 +13,7 @@ Brand-agnostic rules for Signal K instrument lighting. Load after `AGENTS.md` an
 
 Source (time / sun / lux) → intent → native per device → SK vendor paths → **signalk-to-nmea2000** → N2K.
 
-Time is `environment.mode`, sun is `environment.sun`, lux is a configured path. Cascade lux → sun → time when a reading is missing or stale ([ADR 0006](../../docs/adr/0006-source-cascade-lux-sun-mode.md)). Sun and lux curves are given (see [architecture.md](../../docs/architecture.md)). Apply only on source-bin change so a live override survives repeated derived-data ticks. Power-on resync re-applies last intent when a configured device path appears after silence.
+Time is `environment.mode`, sun is `environment.sun`, lux is a configured path. Cascade lux → sun → time when a reading is missing or stale ([ADR 0006](../../docs/adr/0006-source-cascade-lux-sun-mode.md)). Default curves are in [architecture.md](../../docs/architecture.md). Skippers edit Time / Sun / Lux in the webapp or plugin admin; both are plugin config ([ADR 0007](../../docs/adr/0007-mapping-table-webapp.md)). Apply only on source-bin change so a live override survives repeated derived-data ticks. Power-on resync re-applies last intent when a configured device path appears after silence.
 
 Only `auto-learning` stores maps. Identity apply (missing cell) is quantized intent on the vendor 0–1 path. Enabling a brand starts at that mapping, not 0. Persistence is `pluginDataDir/maps.json` ([ADR 0005](../../docs/adr/0005-map-persistence.md)). Palettes are `mode` → native color, per family, not vessel intent. Palette changes never write brightness. Hide palette where the driver declares none (Navico day, Garmin).
 
@@ -23,7 +23,7 @@ Plugins write Signal K. Converters encode. HEX only when the PGN is not understo
 
 ## Webapp (if present)
 
-PUT v1 paths, not `/plugins/<id>`. Phone-first, 48px targets. Chrome follows the phone light/dark setting (`prefers-color-scheme`). Intent is 0–100% in 10% steps on screen; PUT remains 0–1. Show native scale next to per-instrument values. Hide palette where the driver declares none. Bookmark `/signalk-n2k-displays/` when glass is unreadable.
+Live control PUTs v1 paths. Mapping GET/PUT `/plugins/signalk-n2k-displays/mapping` (admin) writes plugin options. Phone-first, 48px targets; mapping only at `min-width: 900px`. Chrome follows the phone light/dark setting (`prefers-color-scheme`). Glass is Day / Night / Off. Brightness is 0–100% in 10% steps on screen; PUT remains 0–1. Navico and Raymarine native both show 0–100%. Time / Sun / Lux (mode + brightness, live reading in each heading) plus a brand-brightness table; lux always shown (add/remove). Hide palette where the driver declares none. Bookmark `/signalk-n2k-displays/` when glass is unreadable. Plugin schema links to that path.
 
 ## Tests
 

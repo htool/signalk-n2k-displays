@@ -20,7 +20,8 @@ Done-when includes tests where the row says so.
 | F11 | bandg-displaydaynight | Stub: map blob PUT onto intent paths; no HEX 130845 | [0004](adr/0004-converter-owns-n2k-encode.md) | Plugin does not emit N2K. README says survivor is n2k-displays. | pending |
 | F12 | instrument-display-plugin | CSS filter from `electrical.displays.brightness` (0–1) | [0001](adr/0001-intent-and-actuation-paths.md) | Keep `environment.mode` for night chrome. Blob `.backlight` fallback until F10 is unused. | pending |
 | F13 | n2k-displays | Source cascade lux → sun → time | [0006](adr/0006-source-cascade-lux-sun-mode.md) | Fresh lux wins; else sun; else `environment.mode`. Stale lux falls back. Reconnect takes over. Tests. | done |
+| F14 | n2k-displays | Mapping table in the webapp (large screen) | [0007](adr/0007-mapping-table-webapp.md), [0005](adr/0005-map-persistence.md), [0003](adr/0003-palettes-are-device-native.md) | Time / Sun / Lux (mode + brightness) plus brand-brightness table. Lux add/remove with bandg defaults. Source curves in plugin config (webapp + admin). Native 0–100% identity-prefilled. Live lux/sun/time in table headings. Schema links to `/signalk-n2k-displays/`. Hide mapping under 900px. Tests. | done |
 
-F13 was pulled ahead of F10 during boat testing. Resume F10 next unless a later row is named.
+F13 was pulled ahead of F10 during boat testing. F14 is named next. Resume F10 after F14 unless a later row is named.
 
 Out of scope for every row: Garmin keypad lighting, DisplayProvider, widescreen layouts, Naviop, simpleCan, new HEX PGN strings.

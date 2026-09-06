@@ -41,6 +41,81 @@
         <h2>Instruments</h2>
         <div id="devices"></div>
       </section>
+      <section id="mapping" class="block mapping" aria-label="Brightness mapping">
+        <h2>Brightness mapping</h2>
+        <p class="hint">
+          Large screen. Time, sun, and lux are the same plugin config as the admin form. Empty lux max is unbounded.
+        </p>
+        <h3>
+          Time
+          <span class="live-now">(<span id="live-time">—</span>)</span>
+        </h3>
+        <div class="mapping-scroll">
+          <table class="mapping-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Brightness</th>
+              </tr>
+            </thead>
+            <tbody id="time-body"></tbody>
+          </table>
+        </div>
+        <h3>
+          Sun
+          <span class="live-now">(<span id="live-sun">—</span>)</span>
+        </h3>
+        <div class="mapping-scroll">
+          <table class="mapping-table">
+            <thead>
+              <tr>
+                <th>Sun</th>
+                <th>Mode</th>
+                <th>Brightness</th>
+              </tr>
+            </thead>
+            <tbody id="sun-body"></tbody>
+          </table>
+        </div>
+        <h3>
+          Lux
+          <span id="live-lux-wrap" class="live-now">(<span id="live-lux">—</span>)</span>
+        </h3>
+        <p id="lux-missing" class="hint lux-missing">
+          Live lux is unavailable because the configured path is missing on this vessel. The lux table below is still editable.
+        </p>
+        <div class="mapping-scroll">
+          <table class="mapping-table">
+            <thead>
+              <tr>
+                <th>Min lux</th>
+                <th>Max lux</th>
+                <th>Mode</th>
+                <th>Brightness</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="lux-body"></tbody>
+          </table>
+        </div>
+        <button type="button" class="hit" id="lux-add">Add lux range</button>
+        <h3>Brand brightness</h3>
+        <p class="hint">Brightness to B&amp;G and Raymarine. Defaults match brightness.</p>
+        <div class="mapping-scroll">
+          <table class="mapping-table">
+            <thead>
+              <tr>
+                <th>Mode</th>
+                <th>Brightness</th>
+                <th>B&amp;G brightness</th>
+                <th>Raymarine brightness</th>
+              </tr>
+            </thead>
+            <tbody id="native-body"></tbody>
+          </table>
+        </div>
+        <p id="mapping-status" class="status"></p>
+      </section>
     </main>
     <script src="app.js"></script>
   </body>

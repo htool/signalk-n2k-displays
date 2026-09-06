@@ -20,5 +20,5 @@ The old bandg checkbox “update only when source changes” plus a boolean on/o
 
 - No separate “learning phase” in the product.
 - Knob on one brand does not rewrite other brands or vessel intent.
-- Lux and hardware gamma stay given; skipper-editable curves are day/night intent and learned native cells.
+- Hardware gamma stays given. Source bins (lux range, sun, `environment.mode`) are plugin config, edited in the webapp or admin form ([ADR 0007](0007-mapping-table-webapp.md)). Native cells stay in `maps.json`. `auto-learning` still stores from a live knob.
 - Which source is live is not a skipper picker: [ADR 0006](0006-source-cascade-lux-sun-mode.md) cascade lux → sun → time.

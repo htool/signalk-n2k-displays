@@ -15,12 +15,11 @@ describe('F9 control webapp', function () {
     html.should.match(/app\.css/)
   })
 
-  it('PUTs v1 intent paths, not plugin REST', function () {
+  it('PUTs v1 intent paths for live control', function () {
     js.should.match(/electrical\.displays\.brightness/)
     js.should.match(/electrical\.displays\.mode/)
     js.should.match(/electrical\.displays\.control/)
     js.should.match(/\/signalk\/v1\/api\/vessels\/self\//)
-    js.should.not.match(/\/plugins\//)
     js.should.match(/'off' \|\| value === 'auto' \|\| value === 'auto-learning'/)
   })
 
@@ -34,11 +33,12 @@ describe('F9 control webapp', function () {
   it('follows the phone light/dark setting for chrome', function () {
     css.should.match(/prefers-color-scheme:\s*dark/)
     css.should.match(/color-scheme:\s*light dark/)
-    js.should.not.match(/environment\.mode/)
+    js.should.not.match(/body\.classList\.toggle\('night'/)
   })
 
   it('shows native scale and hides undeclared palettes', function () {
-    js.should.match(/ \/ 10/)
+    js.should.match(/Math\.round\(n \* 100\) \+ ' %'/)
+    js.should.not.match(/n \* 10\) \+ ' \/ 10'/)
     js.should.match(/quantize\(Number\(value\)\)/)
     html.should.match(/0–100%/)
     js.should.match(/intentPercent\(brightness\) \+ ' %'/)
@@ -47,5 +47,41 @@ describe('F9 control webapp', function () {
     js.should.match(/navico/)
     js.should.match(/raymarine/)
     js.should.not.match(/garmin/)
+  })
+
+  it('has Day, Night, and Off glass buttons', function () {
+    js.should.match(/\['off', 'Off'\]/)
+    js.should.match(/put\(INTENT\.brightness, 0\)/)
+    js.should.match(/put\(INTENT\.brightness, 0\.1\)/)
+  })
+
+  it('shows Time, Sun, and Lux mapping tables', function () {
+    html.should.match(/id="mapping"/)
+    html.should.match(/id="time-body"/)
+    html.should.match(/id="sun-body"/)
+    html.should.match(/id="lux-body"/)
+    html.should.match(/id="lux-add"/)
+    html.should.match(/id="native-body"/)
+    html.should.match(/<th>Brightness<\/th>/)
+    html.should.not.match(/<th>Intent<\/th>/)
+    html.should.match(/Brightness to B&amp;G and Raymarine/)
+    html.should.match(/id="live-lux"/)
+    html.should.match(/id="live-sun"/)
+    html.should.match(/id="live-time"/)
+    html.should.match(/live-now">\(<span id="live-time"/)
+    html.should.match(/live-now">\(<span id="live-sun"/)
+    html.should.match(/live-lux-wrap" class="live-now">\(<span id="live-lux"/)
+    html.should.not.match(/id="live-sources"/)
+    html.should.match(/lux-missing/)
+    css.should.match(/min-width:\s*900px/)
+    css.should.match(/#mapping\s*\{[^}]*display:\s*none/)
+    css.should.match(/#mapping\.no-lux/)
+    js.should.match(/\/plugins\/signalk-n2k-displays\/mapping/)
+    js.should.match(/native: nativeRows/)
+    js.should.match(/lux-add/)
+    js.should.match(/environment\.sun/)
+    js.should.match(/environment\.mode/)
+    js.should.match(/environment\.outside\.lux/)
+    js.should.match(/hasLux/)
   })
 })

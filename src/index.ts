@@ -45,10 +45,26 @@ import {
   storePaletteCell
 } from './maps'
 import {
+  mappingTables,
+  saveMapping,
+  SUN_LABELS
+} from './mapping'
+import {
   DEFAULT_LUX_PATH,
+  LUX_CURVE,
+  SOURCE_BRIGHTNESS_NAMES,
+  SOURCE_BRIGHTNESS_STEPS,
+  SUN_BINS,
+  SUN_CURVE,
+  SourceCurves,
   SourceIntent,
   SourceReadings,
-  intentFromCascade
+  curvesFromPluginConfig,
+  defaultSourceCurves,
+  intentFromCascade,
+  loadSourceCurves,
+  pluginConfigFromCurves,
+  saveSourceCurves
 } from './source'
 import {
   configuredResyncTriggers,
@@ -58,12 +74,45 @@ import {
   sourceMatches
 } from './resync'
 
+function brightnessField (title: string, defaultValue: number) {
+  return {
+    type: 'number',
+    title,
+    enum: SOURCE_BRIGHTNESS_STEPS,
+    enumNames: SOURCE_BRIGHTNESS_NAMES,
+    default: defaultValue
+  }
+}
+
+function sunSchemaProperties () {
+  const properties: any = {}
+  SUN_BINS.forEach(bin => {
+    const def = SUN_CURVE[bin]
+    properties[bin] = {
+      type: 'object',
+      title: SUN_LABELS[bin] || bin,
+      properties: {
+        mode: {
+          type: 'string',
+          title: 'Mode',
+          enum: ['day', 'night'],
+          enumNames: ['Day', 'Night'],
+          default: def.mode
+        },
+        brightness: brightnessField('Brightness', def.brightness)
+      }
+    }
+  })
+  return properties
+}
+
 export default function (app: any) {
   const error = app.error
   const debug = app.debug
   let props: any
   let onStop: any = []
   let maps: BrightnessMaps = emptyMaps()
+  let sourceCurves: SourceCurves = defaultSourceCurves()
   let intentState = {
     brightness: DEFAULTS.brightness,
     mode: DEFAULTS.mode,
@@ -81,6 +130,11 @@ export default function (app: any) {
         typeof app.getDataDirPath === 'function'
           ? loadMaps(app.getDataDirPath())
           : emptyMaps()
+      sourceCurves =
+        curvesFromPluginConfig(properties) ||
+        (typeof app.getDataDirPath === 'function'
+          ? loadSourceCurves(app.getDataDirPath())
+          : defaultSourceCurves())
       intentState =
         typeof app.getDataDirPath === 'function'
           ? loadIntent(app.getDataDirPath())
@@ -126,8 +180,18 @@ export default function (app: any) {
     schema: () => {
       const schema: any = {
         type: 'object',
+        description:
+          'Open the lighting webapp for control and the brightness mapping table (large screen): /signalk-n2k-displays/',
         required: ['raymarineDayColor', 'raymarineNightColor'],
         properties: {
+          webapp: {
+            title: 'Lighting webapp',
+            description:
+              'Open /signalk-n2k-displays/ — mapping table is on a large screen. Live control is phone-first.',
+            type: 'string',
+            default: '/signalk-n2k-displays/',
+            readOnly: true
+          },
           raymarineNightColor: {
             type: 'string',
             title: 'Raymarine Night Color',
@@ -159,6 +223,62 @@ export default function (app: any) {
             type: 'string',
             title: 'Path to outside lux',
             default: DEFAULT_LUX_PATH
+          },
+          time: {
+            title: 'Time (environment.mode)',
+            description:
+              'Intent brightness for vessel day and night. Same values as the webapp Time table.',
+            type: 'object',
+            properties: {
+              day: brightnessField('Day brightness', 0.6),
+              night: brightnessField('Night brightness', 0.3)
+            }
+          },
+          sun: {
+            title: 'Sun (environment.sun)',
+            description:
+              'Day/night and brightness for each sun bin. Same values as the webapp Sun table.',
+            type: 'object',
+            properties: sunSchemaProperties()
+          },
+          lux: {
+            title: 'Lux',
+            description:
+              'Ranges for the lux path. Add or remove rows. Same table as the webapp. Empty max is unbounded.',
+            type: 'object',
+            properties: {
+              table: {
+                type: 'array',
+                title: 'Lux ranges',
+                default: LUX_CURVE.map(bin => ({
+                  luxMin: bin.min,
+                  luxMax: isFinite(bin.max) ? bin.max : undefined,
+                  mode: bin.mode,
+                  brightness: bin.brightness
+                })),
+                items: {
+                  type: 'object',
+                  properties: {
+                    luxMin: {
+                      type: 'number',
+                      title: 'Min lux'
+                    },
+                    luxMax: {
+                      type: 'number',
+                      title: 'Max lux (empty = unbounded)'
+                    },
+                    mode: {
+                      type: 'string',
+                      title: 'Mode',
+                      enum: ['day', 'night'],
+                      enumNames: ['Day', 'Night'],
+                      default: 'day'
+                    },
+                    brightness: brightnessField('Brightness', 0.2)
+                  }
+                }
+              }
+            }
           },
           resync: {
             title: 'Device power-on resync',
@@ -242,6 +362,42 @@ export default function (app: any) {
         }
       })
       return schema
+    },
+
+    registerWithRouter: function (router: any) {
+      router.get('/mapping', (_req: any, res: any) => {
+        res.json(mappingPayload())
+      })
+      router.put('/mapping', (req: any, res: any) => {
+        const body = req.body || {}
+        if (!Array.isArray(body.time) || !Array.isArray(body.sun) || !Array.isArray(body.lux)) {
+          res.status(400)
+          res.json({ message: 'time, sun, and lux tables required' })
+          return
+        }
+        const saved = saveMapping(
+          {
+            time: body.time || [],
+            sun: body.sun || [],
+            lux: body.lux || [],
+            native: Array.isArray(body.native) ? body.native : []
+          },
+          enabledVendorIds('navico'),
+          enabledVendorIds('raymarine'),
+          maps
+        )
+        if (!saved.ok) {
+          res.status(400)
+          res.json({ message: saved.message })
+          return
+        }
+        sourceCurves = saved.curves
+        maps = saved.maps
+        persistCurves()
+        persistMaps()
+        applySourceFromReadings(true)
+        res.json(mappingPayload())
+      })
     }
   }
 
@@ -278,6 +434,66 @@ export default function (app: any) {
     if (dir) {
       saveMaps(dir, maps)
     }
+  }
+
+  function persistCurves () {
+    const config = pluginConfigFromCurves(sourceCurves, luxPath())
+    props = Object.assign({}, props || {}, config)
+    if (typeof app.savePluginOptions === 'function') {
+      app.savePluginOptions(props, () => {})
+    }
+    const dir = dataDir()
+    if (dir) {
+      saveSourceCurves(dir, sourceCurves)
+    }
+  }
+
+  function enabledVendorIds (vendor: 'navico' | 'raymarine'): string[] {
+    const groups =
+      vendor === 'navico' ? simradDisplayGroups : raymarineDisplayGroups
+    const config =
+      vendor === 'navico' ? props && props.navicoGroups : props && props.raymarineGroups
+    return Object.keys(groups)
+      .filter(group => groupEnabled(config, group))
+      .map(group => deviceId(vendor, group))
+  }
+
+  function mappingPayload () {
+    const path = luxPath()
+    const tables = mappingTables(
+      sourceCurves,
+      maps,
+      enabledVendorIds('navico'),
+      enabledVendorIds('raymarine')
+    )
+    return {
+      luxPath: path,
+      luxAvailable: luxPathPresent(path),
+      time: tables.time,
+      sun: tables.sun,
+      lux: tables.lux,
+      native: tables.native
+    }
+  }
+
+  function luxPathPresent (path: string): boolean {
+    if (!path) {
+      return false
+    }
+    if (lastReadings.lux) {
+      return true
+    }
+    if (typeof app.getSelfPath !== 'function') {
+      return false
+    }
+    const node = app.getSelfPath(path)
+    if (node === undefined || node === null) {
+      return false
+    }
+    if (typeof node === 'object' && !Array.isArray(node) && node.value === undefined) {
+      return false
+    }
+    return true
   }
 
   function groupMappings (): any[] {
@@ -868,11 +1084,15 @@ export default function (app: any) {
   }
 
   function luxPath (): string {
-    return (props && props.luxPath) || DEFAULT_LUX_PATH
+    return (
+      (props && props.lux && props.lux.path) ||
+      (props && props.luxPath) ||
+      DEFAULT_LUX_PATH
+    )
   }
 
   function sourceIntentFromReadings (): SourceIntent | undefined {
-    return intentFromCascade(lastReadings)
+    return intentFromCascade(lastReadings, Date.now(), sourceCurves)
   }
 
   function publishIntentState () {
@@ -1244,4 +1464,5 @@ interface Plugin {
   name: string
   description: string
   schema: any
+  registerWithRouter?: (router: any) => void
 }

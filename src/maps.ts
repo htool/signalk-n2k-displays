@@ -64,6 +64,31 @@ export function storeNativeCell (
   maps.brightness[id][mode]![step] = value
 }
 
+export function clearNativeCell (
+  maps: BrightnessMaps,
+  id: string,
+  mode: DisplayMode,
+  intent: number
+): void {
+  const step = String(quantizeBrightness(intent))
+  const device = maps.brightness[id]
+  const cells = device && device[mode]
+  if (cells) {
+    delete cells[step]
+  }
+}
+
+export function clearPaletteCell (
+  maps: BrightnessMaps,
+  id: string,
+  mode: DisplayMode
+): void {
+  const device = maps.palettes[id]
+  if (device) {
+    delete device[mode]
+  }
+}
+
 export function storePaletteCell (
   maps: BrightnessMaps,
   id: string,

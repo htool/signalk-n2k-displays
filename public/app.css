@@ -180,3 +180,87 @@ body {
   color: var(--muted);
   margin: 0;
 }
+
+#mapping {
+  display: none;
+}
+
+.mapping h3 {
+  margin: 16px 0 8px;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.live-now {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.mapping-scroll {
+  overflow: auto;
+}
+
+.mapping-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.mapping-table th,
+.mapping-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.mapping-table th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.mapping-table input,
+.mapping-table select {
+  max-width: 7.5rem;
+  min-height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.lux-missing {
+  display: none;
+}
+
+#mapping.no-lux .lux-missing {
+  display: block;
+}
+
+#mapping.no-lux #live-lux-wrap {
+  display: none;
+}
+
+#lux-add {
+  margin-top: 10px;
+}
+
+.mapping-table tr.live-match {
+  background: color-mix(in srgb, var(--on) 18%, transparent);
+}
+
+@media (min-width: 900px) {
+  .app {
+    max-width: 1120px;
+  }
+
+  #mapping {
+    display: block;
+  }
+}

@@ -48,6 +48,29 @@
   var statusEl = document.getElementById('status')
   var backoff = 500
   var ws
+  var luxPath = 'environment.outside.lux'
+  var hasLux = true
+  var liveLux
+  var liveSun
+  var liveTime
+  var timeRows = []
+  var sunRows = []
+  var luxRows = []
+  var nativeRows = []
+  var mappingTimer
+  var mappingStatusEl = document.getElementById('mapping-status')
+  var SUN_OPTIONS = [
+    ['nauticalDawn', 'Nautical dawn'],
+    ['dawn', 'Dawn'],
+    ['sunrise', 'Sunrise'],
+    ['day', 'Day'],
+    ['sunset', 'Sunset'],
+    ['dusk', 'Dusk'],
+    ['nauticalDusk', 'Nautical dusk'],
+    ['night', 'Night']
+  ]
+  var STEPS = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+  var INTENT_STEPS = [1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
 
   function quantize (n) {
     var x = Math.min(1, Math.max(0, n))
@@ -87,6 +110,18 @@
       }
       return
     }
+    if (path === 'environment.mode') {
+      liveTime = value
+      return
+    }
+    if (path === 'environment.sun') {
+      liveSun = value
+      return
+    }
+    if (path === luxPath) {
+      liveLux = value
+      return
+    }
     var parts = path.split('.')
     if (parts[0] !== 'electrical' || parts[1] !== 'displays') {
       return
@@ -114,11 +149,8 @@
     return Math.round(quantize(ratio) * 100)
   }
 
-  function nativeLabel (vendor, ratio) {
+  function nativeLabel (_vendor, ratio) {
     var n = typeof ratio === 'number' && isFinite(ratio) ? ratio : 0
-    if (vendor === 'navico') {
-      return Math.round(n * 10) + ' / 10'
-    }
     return Math.round(n * 100) + ' %'
   }
 
@@ -174,11 +206,23 @@
     modeRow.innerHTML = ''
     ;[
       ['day', 'Day'],
-      ['night', 'Night']
+      ['night', 'Night'],
+      ['off', 'Off']
     ].forEach(function (pair) {
+      var on =
+        pair[0] === 'off'
+          ? brightness === 0
+          : brightness !== 0 && glassMode === pair[0]
       modeRow.appendChild(
-        hit(pair[1], glassMode === pair[0], function () {
+        hit(pair[1], on, function () {
+          if (pair[0] === 'off') {
+            put(INTENT.brightness, 0)
+            return
+          }
           put(INTENT.mode, pair[0])
+          if (brightness === 0) {
+            put(INTENT.brightness, 0.1)
+          }
         })
       )
     })
@@ -260,6 +304,434 @@
     put(INTENT.brightness, quantize(brightness + 0.1))
   })
 
+  function formatLive (value) {
+    if (value === undefined || value === null || value === '') {
+      return '—'
+    }
+    if (typeof value === 'number' && isFinite(value)) {
+      return Math.round(value * 100) / 100 + ''
+    }
+    return String(value)
+  }
+
+  function sunLabel (bin) {
+    for (var i = 0; i < SUN_OPTIONS.length; i++) {
+      if (SUN_OPTIONS[i][0] === bin) {
+        return SUN_OPTIONS[i][1]
+      }
+    }
+    return bin
+  }
+
+  function modeLabel (mode) {
+    if (mode === 'off') {
+      return 'Off'
+    }
+    return mode === 'night' ? 'Night' : 'Day'
+  }
+
+  function applyLuxUi () {
+    document.getElementById('mapping').classList.toggle('no-lux', !hasLux)
+  }
+
+  function percentLabel (ratio) {
+    return Math.round(quantize(ratio) * 100) + '%'
+  }
+
+  function emptyNativeRows () {
+    var rows = []
+    ;['day', 'night'].forEach(function (mode) {
+      INTENT_STEPS.forEach(function (step) {
+        rows.push({
+          mode: mode,
+          brightness: step,
+          navicoBrightness: step,
+          raymarineBrightness: step
+        })
+      })
+    })
+    return rows
+  }
+
+  function markLive (tbodyId, test) {
+    var body = document.getElementById(tbodyId)
+    if (!body) {
+      return
+    }
+    Array.prototype.forEach.call(body.querySelectorAll('tr'), function (tr) {
+      tr.classList.toggle('live-match', !!test(tr))
+    })
+  }
+
+  function renderLiveSources () {
+    document.getElementById('live-lux').textContent = formatLive(liveLux)
+    document.getElementById('live-sun').textContent = liveSun
+      ? sunLabel(liveSun)
+      : '—'
+    document.getElementById('live-time').textContent = liveTime
+      ? modeLabel(liveTime)
+      : '—'
+    var timeBin = liveTime === 'night' ? 'night' : liveTime ? 'day' : ''
+    markLive('time-body', function (tr) {
+      return timeBin && tr.getAttribute('data-bin') === timeBin
+    })
+    markLive('sun-body', function (tr) {
+      return liveSun && tr.getAttribute('data-bin') === liveSun
+    })
+    markLive('lux-body', function (tr) {
+      if (!hasLux || typeof liveLux !== 'number' || !isFinite(liveLux)) {
+        return false
+      }
+      var idx = Number(tr.getAttribute('data-row'))
+      var row = luxRows[idx]
+      if (!row || row.luxMin === null || row.luxMin === undefined || row.luxMin === '') {
+        return false
+      }
+      var start = Number(row.luxMin)
+      var end =
+        row.luxMax === null || row.luxMax === undefined || row.luxMax === ''
+          ? Infinity
+          : Number(row.luxMax)
+      return liveLux >= start && liveLux < end
+    })
+  }
+
+  function optionEl (value, label, selected) {
+    var o = document.createElement('option')
+    o.value = value
+    o.textContent = label
+    if (selected) {
+      o.selected = true
+    }
+    return o
+  }
+
+  function numberInput (value, onchange) {
+    var input = document.createElement('input')
+    input.type = 'number'
+    input.min = '0'
+    input.step = 'any'
+    input.value =
+      value === null || value === undefined || !isFinite(Number(value))
+        ? ''
+        : String(value)
+    input.addEventListener('change', function () {
+      onchange(input.value === '' ? null : Number(input.value))
+    })
+    return input
+  }
+
+  function selectOne (value, options, onchange, disabled) {
+    var s = document.createElement('select')
+    s.disabled = !!disabled
+    options.forEach(function (pair) {
+      var v = Array.isArray(pair) ? pair[0] : pair
+      var label = Array.isArray(pair) ? pair[1] : percentLabel(pair)
+      s.appendChild(optionEl(v, label, value === v || value === Number(v)))
+    })
+    s.addEventListener('change', function () {
+      onchange(s.value)
+    })
+    return s
+  }
+
+  function selectBright (value, onchange, steps) {
+    var list = steps || STEPS
+    var s = document.createElement('select')
+    list.forEach(function (step) {
+      s.appendChild(
+        optionEl(String(step), percentLabel(step), quantize(value) === step)
+      )
+    })
+    s.addEventListener('change', function () {
+      onchange(Number(s.value))
+    })
+    return s
+  }
+
+  function scheduleMappingSave () {
+    if (demo) {
+      mappingStatusEl.textContent = ''
+      renderLiveSources()
+      return
+    }
+    mappingStatusEl.textContent = 'Saving…'
+    clearTimeout(mappingTimer)
+    mappingTimer = setTimeout(putMapping, 400)
+  }
+
+  function patchRow (rows, index, patch) {
+    Object.keys(patch).forEach(function (key) {
+      rows[index][key] = patch[key]
+    })
+    renderMapping()
+    scheduleMappingSave()
+  }
+
+  function cellText (value) {
+    var span = document.createElement('span')
+    span.textContent = value
+    return span
+  }
+
+  function appendCell (tr, node) {
+    var td = document.createElement('td')
+    td.appendChild(node)
+    tr.appendChild(td)
+  }
+
+  function renderTimeTable () {
+    var body = document.getElementById('time-body')
+    body.innerHTML = ''
+    timeRows.forEach(function (row, index) {
+      var tr = document.createElement('tr')
+      tr.setAttribute('data-bin', row.bin)
+      appendCell(tr, cellText(modeLabel(row.bin)))
+      appendCell(
+        tr,
+        selectBright(
+          row.brightness,
+          function (v) {
+            patchRow(timeRows, index, { brightness: v })
+          },
+          INTENT_STEPS
+        )
+      )
+      body.appendChild(tr)
+    })
+  }
+
+  function renderSunTable () {
+    var body = document.getElementById('sun-body')
+    body.innerHTML = ''
+    sunRows.forEach(function (row, index) {
+      var tr = document.createElement('tr')
+      tr.setAttribute('data-bin', row.bin)
+      appendCell(tr, cellText(sunLabel(row.bin)))
+      appendCell(
+        tr,
+        selectOne(
+          row.mode,
+          [
+            ['day', 'Day'],
+            ['night', 'Night']
+          ],
+          function (v) {
+            patchRow(sunRows, index, { mode: v })
+          }
+        )
+      )
+      appendCell(
+        tr,
+        selectBright(
+          row.brightness,
+          function (v) {
+            patchRow(sunRows, index, { brightness: v })
+          },
+          INTENT_STEPS
+        )
+      )
+      body.appendChild(tr)
+    })
+  }
+
+  function renderLuxTable () {
+    var body = document.getElementById('lux-body')
+    body.innerHTML = ''
+    luxRows.forEach(function (row, index) {
+      var tr = document.createElement('tr')
+      tr.setAttribute('data-row', String(index))
+      appendCell(
+        tr,
+        numberInput(row.luxMin, function (v) {
+          patchRow(luxRows, index, { luxMin: v })
+        })
+      )
+      appendCell(
+        tr,
+        numberInput(row.luxMax, function (v) {
+          patchRow(luxRows, index, { luxMax: v })
+        })
+      )
+      appendCell(
+        tr,
+        selectOne(
+          row.mode,
+          [
+            ['day', 'Day'],
+            ['night', 'Night']
+          ],
+          function (v) {
+            patchRow(luxRows, index, { mode: v })
+          }
+        )
+      )
+      appendCell(
+        tr,
+        selectBright(
+          row.brightness,
+          function (v) {
+            patchRow(luxRows, index, { brightness: v })
+          },
+          INTENT_STEPS
+        )
+      )
+      var remove = document.createElement('button')
+      remove.type = 'button'
+      remove.className = 'hit'
+      remove.textContent = 'Remove'
+      remove.addEventListener('click', function () {
+        luxRows.splice(index, 1)
+        renderMapping()
+        scheduleMappingSave()
+      })
+      appendCell(tr, remove)
+      body.appendChild(tr)
+    })
+  }
+
+  function renderNativeTable () {
+    var body = document.getElementById('native-body')
+    body.innerHTML = ''
+    nativeRows.forEach(function (row, index) {
+      var tr = document.createElement('tr')
+      appendCell(tr, cellText(modeLabel(row.mode)))
+      appendCell(tr, cellText(percentLabel(row.brightness)))
+      appendCell(
+        tr,
+        selectBright(row.navicoBrightness, function (v) {
+          patchRow(nativeRows, index, { navicoBrightness: v })
+        })
+      )
+      appendCell(
+        tr,
+        selectBright(row.raymarineBrightness, function (v) {
+          patchRow(nativeRows, index, { raymarineBrightness: v })
+        })
+      )
+      body.appendChild(tr)
+    })
+  }
+
+  function renderMapping () {
+    renderTimeTable()
+    renderSunTable()
+    renderLuxTable()
+    renderNativeTable()
+    renderLiveSources()
+  }
+
+  function applyMappingBody (body) {
+    if (body.luxPath) {
+      luxPath = body.luxPath
+    }
+    if (typeof body.luxAvailable === 'boolean') {
+      hasLux = body.luxAvailable
+    }
+    applyLuxUi()
+    if (body.time) {
+      timeRows = body.time
+    }
+    if (body.sun) {
+      sunRows = body.sun
+    }
+    if (body.lux) {
+      luxRows = body.lux
+    }
+    nativeRows = Array.isArray(body.native) ? body.native : emptyNativeRows()
+    renderMapping()
+  }
+
+  function putMapping () {
+    fetch('/plugins/signalk-n2k-displays/mapping', {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        time: timeRows,
+        sun: sunRows,
+        lux: luxRows,
+        native: nativeRows
+      })
+    })
+      .then(function (res) {
+        return res.json().then(function (body) {
+          return { ok: res.ok, body: body }
+        })
+      })
+      .then(function (result) {
+        if (!result.ok) {
+          mappingStatusEl.textContent = result.body.message || 'Save failed'
+          return
+        }
+        applyMappingBody(result.body)
+        mappingStatusEl.textContent = ''
+      })
+      .catch(function () {
+        mappingStatusEl.textContent = 'Save failed'
+      })
+  }
+
+  function defaultMappingTables () {
+    return {
+      time: [
+        { bin: 'day', brightness: 0.6 },
+        { bin: 'night', brightness: 0.3 }
+      ],
+      sun: [
+        ['nauticalDawn', 'night', 0.3],
+        ['dawn', 'night', 0.4],
+        ['sunrise', 'day', 0.4],
+        ['day', 'day', 0.6],
+        ['sunset', 'day', 0.4],
+        ['dusk', 'night', 0.4],
+        ['nauticalDusk', 'night', 0.3],
+        ['night', 'night', 0.2]
+      ].map(function (row) {
+        return {
+          bin: row[0],
+          mode: row[1],
+          brightness: row[2]
+        }
+      }),
+      lux: [
+        { luxMin: 0, luxMax: 1, mode: 'night', brightness: 0.2 },
+        { luxMin: 1, luxMax: 10, mode: 'night', brightness: 0.3 },
+        { luxMin: 10, luxMax: 100, mode: 'night', brightness: 0.4 },
+        { luxMin: 100, luxMax: 1000, mode: 'day', brightness: 0.4 },
+        { luxMin: 1000, luxMax: 10000, mode: 'day', brightness: 0.6 },
+        { luxMin: 10000, luxMax: null, mode: 'day', brightness: 1 }
+      ],
+      native: emptyNativeRows()
+    }
+  }
+
+  function loadMapping () {
+    if (demo) {
+      hasLux = true
+      applyMappingBody(defaultMappingTables())
+      return Promise.resolve()
+    }
+    return fetch('/plugins/signalk-n2k-displays/mapping', { credentials: 'include' })
+      .then(function (res) {
+        return res.json()
+      })
+      .then(applyMappingBody)
+      .catch(function () {
+        mappingStatusEl.textContent = 'Mapping unavailable'
+      })
+  }
+
+  document.getElementById('lux-add').addEventListener('click', function () {
+    luxRows.push({
+      luxMin: null,
+      luxMax: null,
+      mode: 'night',
+      brightness: 0.2
+    })
+    renderMapping()
+  })
+
   function onDelta (delta) {
     if (!delta || !delta.updates) {
       return
@@ -272,6 +744,7 @@
       })
     })
     render()
+    renderLiveSources()
   }
 
   function flatten (obj, prefix, out) {
@@ -293,11 +766,21 @@
     var flat = {}
     flatten(tree, '', flat)
     Object.keys(flat).forEach(function (path) {
-      if (path.indexOf('electrical.displays') === 0) {
+      if (path === luxPath && flat[path] !== undefined) {
+        hasLux = true
+      }
+      if (
+        path.indexOf('electrical.displays') === 0 ||
+        path === 'environment.mode' ||
+        path === 'environment.sun' ||
+        (hasLux && path === luxPath)
+      ) {
         applyPath(path, flat[path])
       }
     })
+    applyLuxUi()
     render()
+    renderLiveSources()
   }
 
   function subscribeWs () {
@@ -306,12 +789,18 @@
     ws.onopen = function () {
       backoff = 500
       statusEl.textContent = 'Live'
+      var subscribe = [
+        { path: 'electrical.displays.*', period: 1000 },
+        { path: 'environment.mode', period: 1000 },
+        { path: 'environment.sun', period: 1000 }
+      ]
+      if (hasLux) {
+        subscribe.push({ path: luxPath, period: 1000 })
+      }
       ws.send(
         JSON.stringify({
           context: 'vessels.self',
-          subscribe: [
-            { path: 'electrical.displays.*', period: 1000 }
-          ]
+          subscribe: subscribe
         })
       )
     }
@@ -331,7 +820,7 @@
   }
 
   function loadTree () {
-    fetch('/signalk/v1/api/vessels/self', { credentials: 'include' })
+    return fetch('/signalk/v1/api/vessels/self', { credentials: 'include' })
       .then(function (res) {
         return res.json()
       })
@@ -348,14 +837,21 @@
     applyPath('electrical.displays.navico.group1.nightModeColor', 'red')
     applyPath('electrical.displays.raymarine.helm1.brightness', 0.4)
     applyPath('electrical.displays.raymarine.helm1.color', 'red/black')
+    applyPath('environment.outside.lux', 733)
+    applyPath('environment.sun', 'dusk')
+    applyPath('environment.mode', 'night')
     render()
+    loadMapping()
   }
 
   render()
   if (demo) {
     seedDemo()
   } else {
-    loadTree()
-    subscribeWs()
+    loadMapping().then(function () {
+      return loadTree()
+    }).then(function () {
+      subscribeWs()
+    })
   }
 })()
