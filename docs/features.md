@@ -7,7 +7,7 @@ Done-when includes tests where the row says so.
 | ID | Repo | Outcome | Decisions | Done when | Status |
 | --- | --- | --- | --- | --- | --- |
 | F0 | n2k-displays | Agent context exists | All ADRs | `AGENTS.md` + this file + ADRs on the showcase branch | done (this commit) |
-| F1 | signalk-to-nmea2000 | Navico PGN 130845 from SK: backlight, night mode, night color | [0004](adr/0004-converter-owns-n2k-encode.md), [0001](adr/0001-intent-and-actuation-paths.md), [0003](adr/0003-palettes-are-device-native.md) | Conversion + n2k JSON tests (percent, Value 4 → night, color 0–4) | pending |
+| F1 | signalk-to-nmea2000 | Navico PGN 130845 from SK: backlight, night mode, night color | [0004](adr/0004-converter-owns-n2k-encode.md), [0001](adr/0001-intent-and-actuation-paths.md), [0003](adr/0003-palettes-are-device-native.md) | Conversion + n2k JSON tests (percent, Value 4 → night, color 0–4) | done |
 | F2 | signalk-to-nmea2000 | Raymarine Display Color from `electrical.displays.raymarine.<group>.color` | [0003](adr/0003-palettes-are-device-native.md), [0004](adr/0004-converter-owns-n2k-encode.md) | Conversion + n2k JSON tests. Brightness already exists — do not regress it. | pending |
 | F3 | n2k-displays | Intent paths `electrical.displays.{brightness,mode,control}` published and PUT | [0001](adr/0001-intent-and-actuation-paths.md), [0002](adr/0002-control-off-auto-learning.md) | PUT handlers; meta; no new N2K emit | pending |
 | F4 | n2k-displays | Stop emitting display PGNs once F1+F2 land; write vendor SK paths only | [0004](adr/0004-converter-owns-n2k-encode.md) | No `nmea2000JsonOut` for 130845/126720 display keys. Group sync still copies SK values. | pending |
