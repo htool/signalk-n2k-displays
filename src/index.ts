@@ -25,6 +25,13 @@ import {
   SimnetNightModeColor,
   convertCamelCase
 } from '@canboat/ts-pgns'
+import {
+  DEFAULTS,
+  INTENT_META,
+  INTENT_PATHS,
+  intentDelta,
+  parseIntentPut
+} from './intent'
 
 export default function (app: any) {
   const error = app.error
@@ -35,6 +42,7 @@ export default function (app: any) {
   const plugin: Plugin = {
     start: function (properties: any) {
       props = properties
+      setupIntentPaths()
       setupRaymarineBrightness()
       setupRaymarineColor()
       setupRaymarineNightMode()
@@ -155,6 +163,42 @@ export default function (app: any) {
     } else {
       return parts[parts.length - 1]
     }
+  }
+
+  function setupIntentPaths () {
+    const initial: { [path: string]: any } = {
+      [INTENT_PATHS.brightness]: DEFAULTS.brightness,
+      [INTENT_PATHS.mode]: DEFAULTS.mode,
+      [INTENT_PATHS.control]: DEFAULTS.control
+    }
+    Object.keys(initial).forEach(path => {
+      app.registerPutHandler(
+        'vessels.self',
+        path,
+        (_context: string, putPath: string, value: any) => {
+          const parsed = parseIntentPut(putPath, value)
+          if (!parsed.ok) {
+            return {
+              state: 'COMPLETED',
+              statusCode: 400,
+              message: parsed.message
+            }
+          }
+          app.handleMessage(
+            plugin.id,
+            intentDelta(putPath, parsed.value, INTENT_META[putPath])
+          )
+          return {
+            state: 'COMPLETED',
+            statusCode: 200
+          }
+        }
+      )
+      app.handleMessage(
+        plugin.id,
+        intentDelta(path, initial[path], INTENT_META[path])
+      )
+    })
   }
 
   function setupRaymarineColor () {
