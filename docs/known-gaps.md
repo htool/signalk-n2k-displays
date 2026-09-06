@@ -7,17 +7,9 @@
 - Garmin lighting write protocol is missing. Do not HEX-guess.
 - House theme packs (Freeboard/KIP) are not this job.
 
-## Map persistence (decide in F5)
+## Map persistence
 
-Do not lock until the map feature starts. Options:
-
-| Option | Where | Tradeoff |
-| --- | --- | --- |
-| A — plugin config | `app.savePluginOptions` | Survives restart, admin-visible. Sparse per-device tables fight the form. |
-| B — data-dir JSON | `pluginDataDir/maps.json` | Easy to inspect, backup, fixture in tests. Not on the SK tree. |
-| C — SK paths + persist | `electrical.displays.maps.*` | Queryable. Not spec. Wildcard subscribe risk. |
-
-B is the likely default for tests.
+Locked in [ADR 0005](adr/0005-map-persistence.md): `pluginDataDir/maps.json`. `auto` applies and does not write. `auto-learning` will store cells later. Palettes share the file in F6.
 
 ## Encode
 

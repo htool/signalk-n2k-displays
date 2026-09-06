@@ -21,21 +21,46 @@ import {
 } from '@canboat/ts-pgns'
 import {
   DEFAULTS,
+  DisplayControl,
+  DisplayMode,
   INTENT_META,
   INTENT_PATHS,
   intentDelta,
   parseIntentPut
 } from './intent'
+import {
+  BrightnessMaps,
+  deviceId,
+  emptyMaps,
+  loadMaps,
+  mappedNative,
+  shouldApplyMaps
+} from './maps'
 
 export default function (app: any) {
   const error = app.error
   const debug = app.debug
   let props: any
   let onStop: any = []
+  let maps: BrightnessMaps = emptyMaps()
+  let intentState = {
+    brightness: DEFAULTS.brightness,
+    mode: DEFAULTS.mode,
+    control: DEFAULTS.control
+  }
 
   const plugin: Plugin = {
     start: function (properties: any) {
       props = properties
+      maps =
+        typeof app.getDataDirPath === 'function'
+          ? loadMaps(app.getDataDirPath())
+          : emptyMaps()
+      intentState = {
+        brightness: DEFAULTS.brightness,
+        mode: DEFAULTS.mode,
+        control: DEFAULTS.control
+      }
       setupIntentPaths()
       setupRaymarineBrightness()
       setupRaymarineColor()
@@ -170,10 +195,20 @@ export default function (app: any) {
               message: parsed.message
             }
           }
+          if (putPath === INTENT_PATHS.brightness) {
+            intentState.brightness = parsed.value as number
+          } else if (putPath === INTENT_PATHS.mode) {
+            intentState.mode = parsed.value as DisplayMode
+          } else if (putPath === INTENT_PATHS.control) {
+            intentState.control = parsed.value as DisplayControl
+          }
           app.handleMessage(
             plugin.id,
             intentDelta(putPath, parsed.value, INTENT_META[putPath])
           )
+          if (shouldApplyMaps(intentState.control)) {
+            applyBrightnessMaps()
+          }
           return {
             state: 'COMPLETED',
             statusCode: 200
@@ -588,6 +623,48 @@ export default function (app: any) {
           }
         ]
       })
+    })
+  }
+
+  function groupEnabled (groupsConfig: any, group: string): boolean {
+    return !(
+      groupsConfig !== undefined &&
+      groupsConfig[group] !== undefined &&
+      groupsConfig[group] === false
+    )
+  }
+
+  function applyBrightnessMaps () {
+    if (!shouldApplyMaps(intentState.control)) {
+      return
+    }
+    Object.keys(simradDisplayGroups).forEach(group => {
+      if (!groupEnabled(props.navicoGroups, group)) {
+        return
+      }
+      setSimradDisplayBrightness(
+        group,
+        mappedNative(
+          maps,
+          deviceId('navico', group),
+          intentState.mode,
+          intentState.brightness
+        )
+      )
+    })
+    Object.keys(raymarineDisplayGroups).forEach(group => {
+      if (!groupEnabled(props.raymarineGroups, group)) {
+        return
+      }
+      setRaymarineDisplayBrightness(
+        group,
+        mappedNative(
+          maps,
+          deviceId('raymarine', group),
+          intentState.mode,
+          intentState.brightness
+        )
+      )
     })
   }
 
