@@ -4,8 +4,12 @@ import {
   emptyMaps,
   identityNative,
   mappedNative,
+  mappedPalette,
   clearNativeCell,
-  storeNativeCell
+  clearPaletteCell,
+  storeNativeCell,
+  storePaletteCell,
+  PALETTE_DRIVERS
 } from './maps'
 import {
   LuxBin,
@@ -53,11 +57,17 @@ export type NativeRow = {
   raymarineBrightness: number
 }
 
+export type MappingPalettes = {
+  navicoNight: string
+  raymarineNight: string
+}
+
 export type MappingTables = {
   time: TimeRow[]
   sun: SunRow[]
   lux: LuxRow[]
   native: NativeRow[]
+  palettes?: MappingPalettes
 }
 
 export type MappingSave =
@@ -78,6 +88,19 @@ function nativeFor (
     return identityNative(brightness)
   }
   return mappedNative(maps, ids[0], mode, brightness)
+}
+
+function paletteFor (
+  maps: BrightnessMaps,
+  ids: string[],
+  vendor: 'navico' | 'raymarine',
+  mode: DisplayMode
+): string {
+  const fallback = PALETTE_DRIVERS[vendor].defaults[mode] || ''
+  if (!ids[0]) {
+    return fallback
+  }
+  return mappedPalette(maps, ids[0], mode) || fallback
 }
 
 export function emptyNativeRows (): NativeRow[] {
@@ -140,7 +163,16 @@ export function mappingTables (
       row.brightness
     )
   }))
-  return { time, sun, lux, native }
+  return {
+    time,
+    sun,
+    lux,
+    native,
+    palettes: {
+      navicoNight: paletteFor(maps, navicoIds, 'navico', 'night'),
+      raymarineNight: paletteFor(maps, raymarineIds, 'raymarine', 'night')
+    }
+  }
 }
 
 function parseLuxBound (value: any): number | null {
@@ -253,7 +285,44 @@ export function mapsFromTables (
       row.raymarineBrightness
     )
   })
+  if (tables.palettes) {
+    writeNightPalettes(
+      maps,
+      navicoIds,
+      'navico',
+      tables.palettes.navicoNight
+    )
+    writeNightPalettes(
+      maps,
+      raymarineIds,
+      'raymarine',
+      tables.palettes.raymarineNight
+    )
+  }
   return maps
+}
+
+function writeNightPalettes (
+  maps: BrightnessMaps,
+  ids: string[],
+  vendor: 'navico' | 'raymarine',
+  color: string
+) {
+  if (typeof color !== 'string' || !color) {
+    return
+  }
+  const allowed = PALETTE_DRIVERS[vendor].values.night || []
+  if (allowed.indexOf(color) === -1) {
+    return
+  }
+  const fallback = PALETTE_DRIVERS[vendor].defaults.night
+  ids.forEach(id => {
+    if (color === fallback) {
+      clearPaletteCell(maps, id, 'night')
+    } else {
+      storePaletteCell(maps, id, 'night', color)
+    }
+  })
 }
 
 export function saveMapping (

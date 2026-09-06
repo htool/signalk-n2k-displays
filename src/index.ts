@@ -208,9 +208,9 @@ export default function (app: any) {
           },
           source: {
             type: 'string',
-            title: 'Light steering source (unused)',
+            title: 'Light steering source',
             description:
-              'Legacy. Auto uses lux, then sun, then time (environment.mode). See ADR 0006.',
+              'Unused. Auto uses lux, then sun, then time.',
             enum: ['mode', 'sun', 'lux'],
             enumNames: [
               'Time (environment.mode)',
@@ -227,7 +227,7 @@ export default function (app: any) {
           time: {
             title: 'Time (environment.mode)',
             description:
-              'Intent brightness for vessel day and night. Same values as the webapp Time table.',
+              'Brightness for vessel day and night. Same values as the webapp Time table.',
             type: 'object',
             properties: {
               day: brightnessField('Day brightness', 0.6),
@@ -380,7 +380,14 @@ export default function (app: any) {
             time: body.time || [],
             sun: body.sun || [],
             lux: body.lux || [],
-            native: Array.isArray(body.native) ? body.native : []
+            native: Array.isArray(body.native) ? body.native : [],
+            palettes:
+              body.palettes && typeof body.palettes === 'object'
+                ? {
+                    navicoNight: String(body.palettes.navicoNight || ''),
+                    raymarineNight: String(body.palettes.raymarineNight || '')
+                  }
+                : undefined
           },
           enabledVendorIds('navico'),
           enabledVendorIds('raymarine'),
@@ -472,7 +479,8 @@ export default function (app: any) {
       time: tables.time,
       sun: tables.sun,
       lux: tables.lux,
-      native: tables.native
+      native: tables.native,
+      palettes: tables.palettes
     }
   }
 

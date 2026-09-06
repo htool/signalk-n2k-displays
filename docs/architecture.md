@@ -59,7 +59,7 @@ Do **not** grow `environment.displayMode`. That blob is not in the spec and coll
 - Palette: `mode` → native color, only if the driver declares palettes. Not keyed by intent step. Not a vessel path (brands do not share names). Navico night only (default red). Raymarine day/night (defaults Day 1 / Red/Black). Garmin undeclared — hidden. Changing palette never writes brightness.
 - Only `auto-learning` stores map points. `auto` applies maps and does not train. `off` is live PUTs, nothing stored.
 
-Hardware gamma is given. Source bins are plugin config (Time / Sun / Lux). Native cells are a separate brand-brightness table in the webapp. Identity native is still not written.
+Hardware gamma is given. Source bins are plugin config (Time / Sun / Lux). Native cells are brand Day and Night tables in the webapp (Night below Day; night palettes next to each brand). Identity native is still not written.
 
 ## Power-on resync
 
@@ -71,4 +71,4 @@ See [ADR 0004](adr/0004-converter-owns-n2k-encode.md). This plugin does not call
 
 ## Webapp
 
-Standalone `public/` webapp (bookmark `/signalk-n2k-displays/`). Live control PUTs v1 paths. Phone-first 48px targets. Chrome follows the phone `prefers-color-scheme` setting, not vessel `environment.mode`. Glass is Day, Night, Off (Off is brightness 0). Brightness is 0–100% in 10% steps; the PUT value stays 0–1. Navico and Raymarine native brightness both show 0–100%. Palette row omitted where undeclared (Navico in day, Garmin). Mapping at `min-width: 900px` is Time, Sun, and Lux (mode + brightness; live reading in each heading) plus a brand-brightness table (brightness → B&G / Raymarine). Source tables share plugin config with the admin form. Plugin admin links here.
+Standalone `public/` webapp (bookmark `/signalk-n2k-displays/`). Live control PUTs v1 paths. Phone-first 48px targets. Chrome follows the phone `prefers-color-scheme` setting, not vessel `environment.mode`. Glass is Day, Night, Off (Off is brightness 0). Brightness is 0–100% in 10% steps; the PUT value stays 0–1. Navico and Raymarine native brightness both show 0–100%. Palette row omitted where undeclared (Navico in day, Garmin). Mapping at `min-width: 900px` is Time, Sun, and Lux (mode + brightness; live reading in each heading) plus brand Day and Night tables (Night below Day; night palettes next to each brand’s brightness, with select for all). Source tables share plugin config with the admin form. Plugin admin links here.

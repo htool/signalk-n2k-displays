@@ -30,7 +30,6 @@
           </button>
           <div class="bright-read">
             <span id="bright-value">100 %</span>
-            <span class="hint">0–100% · step 10%</span>
           </div>
           <button type="button" class="hit" id="bright-up" aria-label="Brighter">
             +
@@ -100,19 +99,36 @@
         </div>
         <button type="button" class="hit" id="lux-add">Add lux range</button>
         <h3>Brand brightness</h3>
-        <p class="hint">Brightness to B&amp;G and Raymarine. Defaults match brightness.</p>
-        <div class="mapping-scroll">
-          <table class="mapping-table">
-            <thead>
-              <tr>
-                <th>Mode</th>
-                <th>Brightness</th>
-                <th>B&amp;G brightness</th>
-                <th>Raymarine brightness</th>
-              </tr>
-            </thead>
-            <tbody id="native-body"></tbody>
-          </table>
+        <p class="hint">Brightness to B&amp;G and Raymarine. Night color applies to every night row.</p>
+        <div class="native-pair">
+          <div>
+            <h3>Day</h3>
+            <table class="mapping-table">
+              <thead>
+                <tr>
+                  <th>Brightness</th>
+                  <th>B&amp;G brightness</th>
+                  <th>Raymarine brightness</th>
+                </tr>
+              </thead>
+              <tbody id="native-day-body"></tbody>
+            </table>
+          </div>
+          <div>
+            <h3>Night</h3>
+            <table class="mapping-table">
+              <thead>
+                <tr>
+                  <th>Brightness</th>
+                  <th>B&amp;G brightness</th>
+                  <th>B&amp;G color</th>
+                  <th>Raymarine brightness</th>
+                  <th>Raymarine color</th>
+                </tr>
+              </thead>
+              <tbody id="native-night-body"></tbody>
+            </table>
+          </div>
         </div>
         <p id="mapping-status" class="status"></p>
       </section>

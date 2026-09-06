@@ -255,6 +255,16 @@ body {
   background: color-mix(in srgb, var(--on) 18%, transparent);
 }
 
+.native-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.native-all th {
+  font-weight: 600;
+}
+
 @media (min-width: 900px) {
   .app {
     max-width: 1120px;

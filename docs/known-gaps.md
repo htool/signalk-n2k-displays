@@ -9,7 +9,7 @@
 
 ## Map persistence
 
-Locked in [ADR 0005](adr/0005-map-persistence.md): `pluginDataDir/maps.json`. `auto` applies and does not write. `auto-learning` stores native and palette cells on device PUT. Palettes live under the `palettes` key in the same file. Enabling a brand starts at identity + family palettes; identity cells are not written.
+Locked in [ADR 0005](adr/0005-map-persistence.md): `pluginDataDir/maps.json`. `auto` applies and does not write. `auto-learning` stores native and palette cells on device PUT. Palettes live under the `palettes` key in the same file. The webapp Night table can also write family night palettes (select for all). Enabling a brand starts at identity + family palettes; identity cells are not written.
 
 ## Encode
 

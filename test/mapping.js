@@ -55,6 +55,8 @@ describe('F14 mapping table', function () {
     tables.native[0].brightness.should.equal(1)
     tables.native[0].navicoBrightness.should.equal(1)
     tables.native[0].raymarineBrightness.should.equal(1)
+    tables.palettes.navicoNight.should.equal('red')
+    tables.palettes.raymarineNight.should.equal('red/black')
     ;(tables.time[0].navicoBrightness === undefined).should.equal(true)
   })
 
@@ -83,6 +85,7 @@ describe('F14 mapping table', function () {
     const previous = emptyMaps()
     previous.palettes['navico.default'] = { night: 'green' }
     const tables = mappingTables()
+    delete tables.palettes
     const night = tables.native.find(function (row) {
       return row.mode === 'night' && row.brightness === 0.3
     })
@@ -91,6 +94,32 @@ describe('F14 mapping table', function () {
     saved.ok.should.equal(true)
     saved.maps.brightness['navico.default'].night['0.3'].should.equal(0.2)
     saved.maps.palettes['navico.default'].night.should.equal('green')
+  })
+
+  it('writes a night palette and omits the family default', function () {
+    const previous = emptyMaps()
+    previous.palettes['navico.default'] = { night: 'green' }
+    const tables = mappingTables()
+    tables.palettes = { navicoNight: 'blue', raymarineNight: 'red/black' }
+    const saved = saveMapping(tables, ['navico.default'], ['raymarine.helm1'], previous)
+    saved.ok.should.equal(true)
+    saved.maps.palettes['navico.default'].night.should.equal('blue')
+    const reset = mappingTables(saved.curves, saved.maps, ['navico.default'], [
+      'raymarine.helm1'
+    ])
+    reset.palettes.navicoNight.should.equal('blue')
+    reset.palettes.raymarineNight.should.equal('red/black')
+    const backToDefault = saveMapping(
+      Object.assign({}, tables, {
+        palettes: { navicoNight: 'red', raymarineNight: 'red/black' }
+      }),
+      ['navico.default'],
+      ['raymarine.helm1'],
+      saved.maps
+    )
+    ;(backToDefault.maps.palettes['navico.default'].night === undefined).should.equal(
+      true
+    )
   })
 
   it('rejects overlapping lux ranges', function () {
@@ -121,6 +150,8 @@ describe('F14 mapping table', function () {
     schema.properties.time.properties.day.default.should.equal(0.6)
     schema.properties.sun.properties.dusk.properties.brightness.default.should.equal(0.4)
     schema.properties.lux.properties.table.default.length.should.equal(6)
+    JSON.stringify(schema).should.not.match(/ADR/)
+    schema.properties.source.description.should.match(/Auto uses lux, then sun, then time/)
   })
 
   it('GET mapping returns time, sun, and lux', function () {
@@ -154,6 +185,8 @@ describe('F14 mapping table', function () {
     body.sun.length.should.equal(8)
     body.lux.length.should.equal(6)
     body.native.length.should.equal(20)
+    body.palettes.navicoNight.should.equal('red')
+    body.palettes.raymarineNight.should.equal('red/black')
     plugin.stop()
   })
 

@@ -10,7 +10,7 @@ Requires signalk-server 2.3.0 or newer.
 
 ## Control webapp
 
-Phone-first lighting control. Bookmark `/signalk-n2k-displays/` when glass is unreadable. Live PUT goes to v1 paths (`electrical.displays.*`). Time / Sun / Lux mapping is in the webapp on a large screen and in plugin config (same source). Chrome follows the phone light/dark setting.
+Phone-first lighting control. Bookmark `/signalk-n2k-displays/` when glass is unreadable. Live PUT goes to v1 paths (`electrical.displays.*`). Time / Sun / Lux mapping is in the webapp on a large screen and in plugin config (same source). Brand **Day** and **Night** tables map brightness to B&G and Raymarine; Night has color next to each brand (select for all). Chrome follows the phone light/dark setting.
 
 ![Display lighting webapp on a phone in dark mode, Auto and Night selected, brightness 40%, Navico 40% red palette and Raymarine 40% Red/Black](docs/webapp.png)
 

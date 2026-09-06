@@ -57,6 +57,7 @@
   var sunRows = []
   var luxRows = []
   var nativeRows = []
+  var mappingPalettes = defaultPalettes()
   var mappingTimer
   var mappingStatusEl = document.getElementById('mapping-status')
   var SUN_OPTIONS = [
@@ -353,6 +354,30 @@
     return rows
   }
 
+  function defaultPalettes () {
+    return {
+      navicoNight: 'red',
+      raymarineNight: 'red/black'
+    }
+  }
+
+  function paletteSelect (vendor, mode, value, onchange) {
+    var spec = PALETTE[vendor]
+    var colors = (spec && spec.values[mode]) || []
+    var options = colors.map(function (color) {
+      return [color, (spec.labels && spec.labels[color]) || color]
+    })
+    return selectOne(value, options, onchange)
+  }
+
+  function patchPalettes (patch) {
+    Object.keys(patch).forEach(function (key) {
+      mappingPalettes[key] = patch[key]
+    })
+    renderMapping()
+    scheduleMappingSave()
+  }
+
   function markLive (tbodyId, test) {
     var body = document.getElementById(tbodyId)
     if (!body) {
@@ -590,26 +615,89 @@
     })
   }
 
+  function appendNativeSelectAll (body) {
+    var tr = document.createElement('tr')
+    tr.className = 'native-all'
+    var th = document.createElement('th')
+    th.scope = 'row'
+    th.textContent = 'Select for all'
+    tr.appendChild(th)
+    appendCell(tr, cellText(''))
+    appendCell(
+      tr,
+      paletteSelect('navico', 'night', mappingPalettes.navicoNight, function (v) {
+        patchPalettes({ navicoNight: v })
+      })
+    )
+    appendCell(tr, cellText(''))
+    appendCell(
+      tr,
+      paletteSelect(
+        'raymarine',
+        'night',
+        mappingPalettes.raymarineNight,
+        function (v) {
+          patchPalettes({ raymarineNight: v })
+        }
+      )
+    )
+    body.appendChild(tr)
+  }
+
+  function appendNativeRow (body, row, index, night) {
+    var tr = document.createElement('tr')
+    appendCell(tr, cellText(percentLabel(row.brightness)))
+    appendCell(
+      tr,
+      selectBright(row.navicoBrightness, function (v) {
+        patchRow(nativeRows, index, { navicoBrightness: v })
+      })
+    )
+    if (night) {
+      appendCell(
+        tr,
+        paletteSelect('navico', 'night', mappingPalettes.navicoNight, function (v) {
+          patchPalettes({ navicoNight: v })
+        })
+      )
+    }
+    appendCell(
+      tr,
+      selectBright(row.raymarineBrightness, function (v) {
+        patchRow(nativeRows, index, { raymarineBrightness: v })
+      })
+    )
+    if (night) {
+      appendCell(
+        tr,
+        paletteSelect(
+          'raymarine',
+          'night',
+          mappingPalettes.raymarineNight,
+          function (v) {
+            patchPalettes({ raymarineNight: v })
+          }
+        )
+      )
+    }
+    body.appendChild(tr)
+  }
+
   function renderNativeTable () {
-    var body = document.getElementById('native-body')
-    body.innerHTML = ''
+    var dayBody = document.getElementById('native-day-body')
+    var nightBody = document.getElementById('native-night-body')
+    dayBody.innerHTML = ''
+    nightBody.innerHTML = ''
     nativeRows.forEach(function (row, index) {
-      var tr = document.createElement('tr')
-      appendCell(tr, cellText(modeLabel(row.mode)))
-      appendCell(tr, cellText(percentLabel(row.brightness)))
-      appendCell(
-        tr,
-        selectBright(row.navicoBrightness, function (v) {
-          patchRow(nativeRows, index, { navicoBrightness: v })
-        })
-      )
-      appendCell(
-        tr,
-        selectBright(row.raymarineBrightness, function (v) {
-          patchRow(nativeRows, index, { raymarineBrightness: v })
-        })
-      )
-      body.appendChild(tr)
+      if (row.mode === 'day') {
+        appendNativeRow(dayBody, row, index, false)
+      }
+    })
+    appendNativeSelectAll(nightBody)
+    nativeRows.forEach(function (row, index) {
+      if (row.mode === 'night') {
+        appendNativeRow(nightBody, row, index, true)
+      }
     })
   }
 
@@ -639,6 +727,13 @@
       luxRows = body.lux
     }
     nativeRows = Array.isArray(body.native) ? body.native : emptyNativeRows()
+    mappingPalettes = {
+      navicoNight:
+        (body.palettes && body.palettes.navicoNight) || defaultPalettes().navicoNight,
+      raymarineNight:
+        (body.palettes && body.palettes.raymarineNight) ||
+        defaultPalettes().raymarineNight
+    }
     renderMapping()
   }
 
@@ -651,7 +746,8 @@
         time: timeRows,
         sun: sunRows,
         lux: luxRows,
-        native: nativeRows
+        native: nativeRows,
+        palettes: mappingPalettes
       })
     })
       .then(function (res) {
@@ -702,7 +798,8 @@
         { luxMin: 1000, luxMax: 10000, mode: 'day', brightness: 0.6 },
         { luxMin: 10000, luxMax: null, mode: 'day', brightness: 1 }
       ],
-      native: emptyNativeRows()
+      native: emptyNativeRows(),
+      palettes: defaultPalettes()
     }
   }
 
@@ -822,10 +919,18 @@
   function loadTree () {
     return fetch('/signalk/v1/api/vessels/self', { credentials: 'include' })
       .then(function (res) {
+        if (!res.ok) {
+          throw new Error('no signalk')
+        }
         return res.json()
       })
-      .then(hydrate)
-      .catch(function () {})
+      .then(function (tree) {
+        hydrate(tree)
+        return true
+      })
+      .catch(function () {
+        return false
+      })
   }
 
   function seedDemo () {
@@ -840,8 +945,9 @@
     applyPath('environment.outside.lux', 733)
     applyPath('environment.sun', 'dusk')
     applyPath('environment.mode', 'night')
+    hasLux = true
+    applyMappingBody(defaultMappingTables())
     render()
-    loadMapping()
   }
 
   render()
@@ -850,8 +956,12 @@
   } else {
     loadMapping().then(function () {
       return loadTree()
-    }).then(function () {
-      subscribeWs()
+    }).then(function (live) {
+      if (live) {
+        subscribeWs()
+      } else {
+        seedDemo()
+      }
     })
   }
 })()

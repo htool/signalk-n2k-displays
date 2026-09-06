@@ -23,7 +23,7 @@ Plugins write Signal K. Converters encode. HEX only when the PGN is not understo
 
 ## Webapp (if present)
 
-Live control PUTs v1 paths. Mapping GET/PUT `/plugins/signalk-n2k-displays/mapping` (admin) writes plugin options. Phone-first, 48px targets; mapping only at `min-width: 900px`. Chrome follows the phone light/dark setting (`prefers-color-scheme`). Glass is Day / Night / Off. Brightness is 0–100% in 10% steps on screen; PUT remains 0–1. Navico and Raymarine native both show 0–100%. Time / Sun / Lux (mode + brightness, live reading in each heading) plus a brand-brightness table; lux always shown (add/remove). Hide palette where the driver declares none. Bookmark `/signalk-n2k-displays/` when glass is unreadable. Plugin schema links to that path.
+Live control PUTs v1 paths. Mapping GET/PUT `/plugins/signalk-n2k-displays/mapping` (admin) writes plugin options. Phone-first, 48px targets; mapping only at `min-width: 900px`. Chrome follows the phone light/dark setting (`prefers-color-scheme`). Glass is Day / Night / Off. Brightness is 0–100% in 10% steps on screen; PUT remains 0–1. Navico and Raymarine native both show 0–100%. Time / Sun / Lux (mode + brightness, live reading in each heading) plus brand Day and Night tables (Night below Day; night palettes next to each brand’s brightness, with select for all); lux always shown (add/remove). Hide palette where the driver declares none. Bookmark `/signalk-n2k-displays/` when glass is unreadable. Plugin schema links to that path.
 
 ## Tests
 

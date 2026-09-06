@@ -6,7 +6,7 @@ Skippers edit **source curves** in three tables: Time (`environment.mode`), Sun 
 
 Phone layout stays F9 (off/auto/learn, glass Day/Night/Off, instruments). Plugin schema still links to `/signalk-n2k-displays/`.
 
-Live vessel readings sit in each source table heading: time on Time, sun on Sun, lux on Lux. Matching rows are highlighted. Palettes stay on the instrument cards, not on these tables ([ADR 0003](0003-palettes-are-device-native.md)).
+Live vessel readings sit in each source table heading: time on Time, sun on Sun, lux on Lux. Matching rows are highlighted. Brand night palettes (B&G and Raymarine) sit on the Night table, one color per family next to that brand’s brightness, with **Select for all** at the top ([ADR 0003](0003-palettes-are-device-native.md)). Instrument cards keep live palette PUTs.
 
 ### Time
 
@@ -22,7 +22,7 @@ Always shown, including when the lux path is missing on the vessel (then live lu
 
 ### Brand brightness
 
-Rows are day 100%→10% then night 100%→10%. B&G and Raymarine start equal to brightness (identity). Native columns write `maps.json` for every enabled group of that family. Missing native cells stay identity and are not written ([ADR 0005](0005-map-persistence.md)). Saving this table does not clear palettes. If PUT omits `native`, existing maps are left as they are.
+Two tables, **Day** then **Night** below it. Day is brightness only. Night has brightness with B&G / Raymarine color next to each brand. No Mode column. Rows are 100%→10%. B&G and Raymarine start equal to brightness (identity). Night has **Select for all** plus per-row color dropdowns for B&G (red/green/blue/white/magenta, default red) and Raymarine (red/black, inverse; default red/black). Palettes stay **mode → native color**, not per brightness step: every night dropdown writes the same family night cell. Native brightness columns write `maps.json` for every enabled group of that family. Missing native cells stay identity and are not written ([ADR 0005](0005-map-persistence.md)). Default palettes are not written. Saving brightness does not clear palettes. If PUT omits `native` or `palettes`, existing maps for that part are left as they are. Chrome color follows `prefers-color-scheme`; the night table is not restyled as dark.
 
 Live glass still PUTs v1 paths. Tables GET/PUT `/plugins/signalk-n2k-displays/mapping` (admin session), which updates plugin options via `savePluginOptions`. `source.json` is only a fallback when plugin options have no source tables yet.
 
@@ -34,7 +34,7 @@ One row per brightness cell mixed three sources onto a grid that could not show 
 
 ## Consequences
 
-- Tests: plugin-config roundtrip; lux add/remove; identity cells omitted; palettes preserved on native save; webapp hides mapping under 900px; schema has time/sun/lux.
+- Tests: plugin-config roundtrip; lux add/remove; identity cells omitted; palettes preserved on native save; night palettes roundtrip; webapp hides mapping under 900px; schema has time/sun/lux.
 - Overlapping lux ranges are rejected on save.
 - B&G and Raymarine native brightness both display 0–100% in 10% steps.
 - Raymarine 0/2/3/4 stay palettes, never dim steps.
