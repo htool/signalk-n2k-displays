@@ -4,6 +4,8 @@ Branch `showcase/instrument-lighting` across four repos. This plugin owns **poli
 
 Boatnet (the live Signal K on the boat) is the demo: enable this plugin, enable the Navico and Raymarine conversions on signalk-to-nmea2000, bookmark `/signalk-n2k-displays/`.
 
+Narrative for core and plugin authors: [blog-signalk-ai-lighting.md](blog-signalk-ai-lighting.md) — how the Signal K AI approach ran on this showcase.
+
 ## Job
 
 Source → skipper brightness 0–1 and day/night → per-device native brightness and palette → vendor Signal K paths → converter → NMEA 2000.
