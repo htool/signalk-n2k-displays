@@ -170,7 +170,7 @@
   }
 
   function mappingEditable () {
-    return control === 'auto-learning'
+    return control !== 'auto'
   }
 
   function luxRowMatches (row, lux) {
@@ -404,7 +404,7 @@
       return '—'
     }
     if (typeof value === 'number' && isFinite(value)) {
-      return Math.round(value * 100) / 100 + ''
+      return Math.round(value * 100) / 100 + ' lumen'
     }
     return String(value)
   }

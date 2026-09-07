@@ -579,9 +579,15 @@ export default function (app: any) {
                 statusCode: 200
               }
             }
-            applyBrightnessMaps()
+          }
+          if (
+            shouldApplyMaps(intentState.control) ||
+            putPath === INTENT_PATHS.brightness ||
+            putPath === INTENT_PATHS.mode
+          ) {
+            applyBrightnessMaps(true)
             if (putPath !== INTENT_PATHS.brightness) {
-              applyPaletteMaps()
+              applyPaletteMaps(true)
             }
           }
           return {
@@ -627,10 +633,8 @@ export default function (app: any) {
     intentState.brightness = parsed.brightness
     persistIntent()
     publishIntentState()
-    if (shouldApplyMaps(intentState.control)) {
-      applyBrightnessMaps()
-      applyPaletteMaps()
-    }
+    applyBrightnessMaps(true)
+    applyPaletteMaps(true)
     return {
       state: 'COMPLETED',
       statusCode: 200

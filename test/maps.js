@@ -146,14 +146,14 @@ describe('identity brightness maps', function () {
 })
 
 describe('apply maps on intent PUT', function () {
-  it('does not apply while control is off', function () {
+  it('applies glass brightness PUT while control is off', function () {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'n2k-maps-'))
     const app = mockApp(dir)
     const plugin = createPlugin(app)
     plugin.start(enabledOnly(['group1'], ['helm1']))
     app.puts[INTENT_PATHS.brightness]('vessels.self', INTENT_PATHS.brightness, 0.54)
-    lastValue(app.messages, 'electrical.displays.navico.group1.brightness').should.equal(1)
-    lastValue(app.messages, 'electrical.displays.raymarine.helm1.brightness').should.equal(1)
+    lastValue(app.messages, 'electrical.displays.navico.group1.brightness').should.equal(0.5)
+    lastValue(app.messages, 'electrical.displays.raymarine.helm1.brightness').should.equal(0.5)
   })
 
   it('identity-applies enabled groups when switching to auto', function () {

@@ -153,7 +153,7 @@ describe('palette maps', function () {
 })
 
 describe('apply palettes on intent PUT', function () {
-  it('does not apply while control is off', function () {
+  it('applies night mode PUT while control is off', function () {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'n2k-maps-'))
     const app = mockApp(dir)
     const plugin = createPlugin(app)
@@ -166,11 +166,11 @@ describe('apply palettes on intent PUT', function () {
     lastValue(
       app.messages,
       'electrical.displays.raymarine.helm1.color'
-    ).should.equal('day1')
+    ).should.equal('red/black')
     lastValue(
       app.messages,
       'electrical.displays.navico.group1.nightMode.state'
-    ).should.equal(0)
+    ).should.equal(1)
   })
 
   it('applies Raymarine day color and hides Navico palette in day', function () {

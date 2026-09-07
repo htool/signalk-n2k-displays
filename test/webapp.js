@@ -26,6 +26,8 @@ describe('F9 control webapp', function () {
     js.should.match(/recordActiveSunLux/)
     js.should.match(/liveEditable/)
     js.should.match(/mappingEditable/)
+    js.should.match(/control !== 'auto'/)
+    js.should.match(/ \+ ' lumen'/)
   })
 
   it('is phone-first with 48px hit targets', function () {

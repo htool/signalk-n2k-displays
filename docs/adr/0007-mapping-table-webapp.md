@@ -4,7 +4,7 @@
 
 Skippers edit **source curves** in three tables: Time (`environment.mode`), Sun (`environment.sun`), and Lux (configured path). Each source table is **mode and brightness only**. A fourth table maps **brightness → B&G and Raymarine native brightness** for day and night. The webapp shows them at `min-width: 900px`. The plugin admin form shows Time / Sun / Lux. Both source editors read and write **plugin config** (Signal K plugin options). Learned native cells stay in `maps.json` ([ADR 0005](0005-map-persistence.md)), not config.
 
-Phone layout stays F9 (Manual/Auto/Learning, glass Day/Night/Off, instruments). Plugin schema still links to `/signalk-n2k-displays/`. Mapping tables are editable only in Learning; Auto locks them.
+Phone layout stays F9 (Manual/Auto/Learning, glass Day/Night/Off, instruments). Plugin schema still links to `/signalk-n2k-displays/`. Mapping tables are editable in Manual and Learning; Auto locks them.
 
 Live vessel readings sit in each source table heading: time on Time, sun on Sun, lux on Lux. Matching rows are highlighted. Brand night palettes (B&G and Raymarine) sit on the Night table, one color per family next to that brand’s brightness, with **Select for all** at the top ([ADR 0003](0003-palettes-are-device-native.md)). Instrument cards keep live palette PUTs.
 
