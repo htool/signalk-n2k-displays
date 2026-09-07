@@ -55,6 +55,7 @@ describe('F9 control webapp', function () {
     js.should.match(/navico/)
     js.should.match(/raymarine/)
     js.should.not.match(/garmin/)
+    js.should.not.match(/magenta/)
   })
 
   it('has Day, Night, and Off glass buttons', function () {

@@ -126,7 +126,7 @@ describe('palette maps', function () {
     const maps = {
       brightness: {},
       palettes: {
-        'navico.group1': { night: 'day1' },
+        'navico.group1': { night: 'magenta' },
         'raymarine.helm1': { day: 'red' }
       }
     }
@@ -144,7 +144,7 @@ describe('palette maps', function () {
     const maps = {
       brightness: {},
       palettes: {
-        'navico.group1': { night: 'magenta' }
+        'navico.group1': { night: 'green' }
       }
     }
     saveMaps(dir, maps)

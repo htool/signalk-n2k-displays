@@ -1520,13 +1520,12 @@ const simradDisplayGroups: { [key: string]: SimnetDisplayGroup } = {
 }
 
 const simradDisplayNightColors: {
-  [key: string]: SimnetNightModeColor | number
+  [key: string]: SimnetNightModeColor
 } = {
   red: SimnetNightModeColor.Red,
   green: SimnetNightModeColor.Green,
   blue: SimnetNightModeColor.Blue,
-  white: SimnetNightModeColor.White,
-  magenta: 4
+  white: SimnetNightModeColor.White
 }
 
 interface Plugin {

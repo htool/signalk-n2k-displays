@@ -10,14 +10,13 @@
       path: 'nightModeColor',
       modes: ['night'],
       values: {
-        night: ['red', 'green', 'blue', 'white', 'magenta']
+        night: ['red', 'green', 'blue', 'white']
       },
       labels: {
         red: 'Red',
         green: 'Green',
         blue: 'Blue',
-        white: 'White',
-        magenta: 'Magenta'
+        white: 'White'
       }
     },
     raymarine: {

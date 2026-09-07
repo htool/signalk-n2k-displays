@@ -45,7 +45,7 @@ Reserved leaves under `electrical.displays`: `brightness`, `mode`, `control`.
 
 Source cascade ([ADR 0006](adr/0006-source-cascade-lux-sun-mode.md)): fresh lux (15 min) → sun (5 min) → `environment.mode` (5 min). Apply only on source-bin change so a live override survives derived-data ticks.
 
-Palettes are **mode → native color**, not per brightness step ([ADR 0003](adr/0003-palettes-are-device-native.md)). Navico night only (red/green/blue/white/magenta, default red). Raymarine day (day1/day2) and night (red/black, inverse). Raymarine 0/2/3/4 are palettes, not dim levels.
+Palettes are **mode → native color**, not per brightness step ([ADR 0003](adr/0003-palettes-are-device-native.md)). Navico night only (red/green/blue/white, default red). Raymarine day (day1/day2) and night (red/black, inverse). Raymarine 0/2/3/4 are palettes, not dim levels.
 
 Maps persist in `pluginDataDir/maps.json` ([ADR 0005](adr/0005-map-persistence.md)). Identity native is not written.
 
@@ -58,7 +58,7 @@ Ordered slices; all rows below are done. Details in [features.md](features.md).
 | ID | Repo | What landed |
 | --- | --- | --- |
 | F0 | n2k-displays | Agent context, ADRs, feature list. |
-| F1 | signalk-to-nmea2000 | Navico PGN 130845 from vendor SK (backlight %, night 4/day 1, night color 0–4). |
+| F1 | signalk-to-nmea2000 | Navico PGN 130845 from vendor SK (backlight %, night 4/day 1, night color 0–3). |
 | F2 | signalk-to-nmea2000 | Raymarine Display Color from `electrical.displays.raymarine.<group>.color`. Brightness conversion already existed. |
 | F3 | n2k-displays | Intent paths published and PUT. |
 | F4 | n2k-displays | Stop emitting display PGNs; vendor SK only. |

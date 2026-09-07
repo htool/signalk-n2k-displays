@@ -20,7 +20,7 @@ export const PALETTE_DRIVERS: { [vendor: string]: PaletteDriver } = {
   navico: {
     modes: ['night'],
     values: {
-      night: ['red', 'green', 'blue', 'white', 'magenta']
+      night: ['red', 'green', 'blue', 'white']
     },
     defaults: { night: 'red' }
   },

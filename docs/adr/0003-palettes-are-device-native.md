@@ -8,7 +8,7 @@ Palette map: **mode → native color**, per device/group, only where the driver 
 
 | Family | When | Values | Path / wire |
 | --- | --- | --- | --- |
-| Navico / B&G | Night only. Hide in day. | red, green, blue, white, magenta. Default red. | `electrical.displays.navico.<group>.nightModeColor`. PGN 130845 key Night mode color 0–4. |
+| Navico / B&G | Night only. Hide in day. | red, green, blue, white. Default red. | `electrical.displays.navico.<group>.nightModeColor`. PGN 130845 key Night mode color 0–3. (canboat also lists Magenta=4; Zeus 3S does not offer it.) |
 | Raymarine | Always. Day cell and night cell. | Day: Day 1, Day 2. Night: Red/Black, Inverse. Defaults Day 1 / Red/Black. | `electrical.displays.raymarine.<group>.color`. PGN 126720 Display Color: 0=Day1, 2=Day2, 3=Red/Black, 4=Inverse. Night mode **is** this color switch. |
 | Garmin | Later | Day full / high contrast; night full / red-black / green-black | No lighting write yet. |
 
