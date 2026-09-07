@@ -84,6 +84,12 @@
 
   function put (path, value) {
     applyPath(path, value)
+    if (
+      control === 'auto-learning' &&
+      (path === INTENT.brightness || path === INTENT.mode)
+    ) {
+      recordActiveSunLux()
+    }
     render()
     if (demo) {
       return
@@ -151,8 +157,60 @@
   }
 
   function nativeLabel (_vendor, ratio) {
+    return percentText(ratio)
+  }
+
+  function percentText (ratio) {
     var n = typeof ratio === 'number' && isFinite(ratio) ? ratio : 0
-    return Math.round(n * 100) + ' %'
+    return Math.round(quantize(n) * 100) + '%'
+  }
+
+  function liveEditable () {
+    return control !== 'auto'
+  }
+
+  function mappingEditable () {
+    return control === 'auto-learning'
+  }
+
+  function luxRowMatches (row, lux) {
+    if (typeof lux !== 'number' || !isFinite(lux)) {
+      return false
+    }
+    if (row.luxMin === null || row.luxMin === undefined || row.luxMin === '') {
+      return false
+    }
+    var start = Number(row.luxMin)
+    var end =
+      row.luxMax === null || row.luxMax === undefined || row.luxMax === ''
+        ? Infinity
+        : Number(row.luxMax)
+    return lux >= start && lux < end
+  }
+
+  function recordActiveSunLux () {
+    if (control !== 'auto-learning' || brightness === 0) {
+      return
+    }
+    var changed = false
+    sunRows.forEach(function (row) {
+      if (liveSun && row.bin === liveSun) {
+        row.mode = glassMode
+        row.brightness = brightness
+        changed = true
+      }
+    })
+    luxRows.forEach(function (row) {
+      if (luxRowMatches(row, liveLux)) {
+        row.mode = glassMode
+        row.brightness = brightness
+        changed = true
+      }
+    })
+    if (changed) {
+      renderMapping()
+      scheduleMappingSave()
+    }
   }
 
   function groupTitle (group) {
@@ -180,22 +238,51 @@
       })
   }
 
-  function hit (label, on, onclick) {
+  function hit (label, on, onclick, disabled) {
     var b = document.createElement('button')
     b.type = 'button'
     b.className = 'hit' + (on ? ' on' : '')
     b.textContent = label
-    b.addEventListener('click', onclick)
+    b.disabled = !!disabled
+    if (!disabled) {
+      b.addEventListener('click', onclick)
+    }
     return b
   }
 
+  function brightControl (ratio, onchange, disabled) {
+    var wrap = document.createElement('div')
+    wrap.className = 'bright'
+    var slider = document.createElement('input')
+    slider.type = 'range'
+    slider.min = '0'
+    slider.max = '100'
+    slider.step = '10'
+    slider.value = String(intentPercent(ratio))
+    slider.setAttribute('aria-label', 'Brightness')
+    slider.disabled = !!disabled
+    var read = document.createElement('span')
+    read.className = 'percent'
+    read.textContent = percentText(ratio)
+    slider.addEventListener('input', function () {
+      read.textContent = slider.value + '%'
+    })
+    slider.addEventListener('change', function () {
+      onchange(Number(slider.value) / 100)
+    })
+    wrap.appendChild(slider)
+    wrap.appendChild(read)
+    return wrap
+  }
+
   function render () {
+    var locked = !liveEditable()
     var controlRow = document.getElementById('control-row')
     controlRow.innerHTML = ''
     ;[
-      ['off', 'Off'],
+      ['off', 'Manual'],
       ['auto', 'Auto'],
-      ['auto-learning', 'Learn']
+      ['auto-learning', 'Learning']
     ].forEach(function (pair) {
       controlRow.appendChild(
         hit(pair[1], control === pair[0], function () {
@@ -215,20 +302,34 @@
           ? brightness === 0
           : brightness !== 0 && glassMode === pair[0]
       modeRow.appendChild(
-        hit(pair[1], on, function () {
-          if (pair[0] === 'off') {
-            put(INTENT.brightness, 0)
-            return
-          }
-          put(INTENT.mode, pair[0])
-          if (brightness === 0) {
-            put(INTENT.brightness, 0.1)
-          }
-        })
+        hit(
+          pair[1],
+          on,
+          function () {
+            if (pair[0] === 'off') {
+              put(INTENT.brightness, 0)
+              return
+            }
+            put(INTENT.mode, pair[0])
+            if (brightness === 0) {
+              put(INTENT.brightness, 0.1)
+            }
+          },
+          locked
+        )
       )
     })
-    document.getElementById('bright-value').textContent =
-      intentPercent(brightness) + ' %'
+    var glassBright = document.getElementById('glass-bright')
+    glassBright.innerHTML = ''
+    glassBright.appendChild(
+      brightControl(
+        brightness,
+        function (v) {
+          put(INTENT.brightness, quantize(v))
+        },
+        locked
+      )
+    )
     var mount = document.getElementById('devices')
     mount.innerHTML = ''
     var list = deviceList()
@@ -237,6 +338,7 @@
       empty.className = 'empty'
       empty.textContent = 'No instrument groups yet.'
       mount.appendChild(empty)
+      renderMapping()
       return
     }
     list.forEach(function (dev) {
@@ -248,29 +350,22 @@
         ' · ' +
         groupTitle(dev.group)
       card.appendChild(h)
-      var native = document.createElement('div')
-      native.className = 'native'
-      native.appendChild(
-        hit('−', false, function () {
-          put(
-            'electrical.displays.' + dev.vendor + '.' + dev.group + '.brightness',
-            quantize((dev.brightness || 0) - 0.1)
-          )
-        })
+      card.appendChild(
+        brightControl(
+          dev.brightness,
+          function (v) {
+            put(
+              'electrical.displays.' +
+                dev.vendor +
+                '.' +
+                dev.group +
+                '.brightness',
+              quantize(v)
+            )
+          },
+          locked
+        )
       )
-      var read = document.createElement('div')
-      read.className = 'native-read'
-      read.textContent = nativeLabel(dev.vendor, dev.brightness)
-      native.appendChild(read)
-      native.appendChild(
-        hit('+', false, function () {
-          put(
-            'electrical.displays.' + dev.vendor + '.' + dev.group + '.brightness',
-            quantize((dev.brightness || 0) + 0.1)
-          )
-        })
-      )
-      card.appendChild(native)
       if (showPalette(dev.vendor)) {
         var spec = paletteFor(dev.vendor)
         var pal = document.createElement('div')
@@ -279,31 +374,30 @@
           spec.path === 'color' ? dev.color : dev.nightModeColor
         ;(spec.values[glassMode] || []).forEach(function (color) {
           pal.appendChild(
-            hit(spec.labels[color] || color, current === color, function () {
-              put(
-                'electrical.displays.' +
-                  dev.vendor +
-                  '.' +
-                  dev.group +
-                  '.' +
-                  spec.path,
-                color
-              )
-            })
+            hit(
+              spec.labels[color] || color,
+              current === color,
+              function () {
+                put(
+                  'electrical.displays.' +
+                    dev.vendor +
+                    '.' +
+                    dev.group +
+                    '.' +
+                    spec.path,
+                  color
+                )
+              },
+              locked
+            )
           )
         })
         card.appendChild(pal)
       }
       mount.appendChild(card)
     })
+    renderMapping()
   }
-
-  document.getElementById('bright-down').addEventListener('click', function () {
-    put(INTENT.brightness, quantize(brightness - 0.1))
-  })
-  document.getElementById('bright-up').addEventListener('click', function () {
-    put(INTENT.brightness, quantize(brightness + 0.1))
-  })
 
   function formatLive (value) {
     if (value === undefined || value === null || value === '') {
@@ -361,13 +455,13 @@
     }
   }
 
-  function paletteSelect (vendor, mode, value, onchange) {
+  function paletteSelect (vendor, mode, value, onchange, disabled) {
     var spec = PALETTE[vendor]
     var colors = (spec && spec.values[mode]) || []
     var options = colors.map(function (color) {
       return [color, (spec.labels && spec.labels[color]) || color]
     })
-    return selectOne(value, options, onchange)
+    return selectOne(value, options, onchange, disabled)
   }
 
   function patchPalettes (patch) {
@@ -431,11 +525,12 @@
     return o
   }
 
-  function numberInput (value, onchange) {
+  function numberInput (value, onchange, disabled) {
     var input = document.createElement('input')
     input.type = 'number'
     input.min = '0'
     input.step = 'any'
+    input.disabled = !!disabled
     input.value =
       value === null || value === undefined || !isFinite(Number(value))
         ? ''
@@ -460,9 +555,10 @@
     return s
   }
 
-  function selectBright (value, onchange, steps) {
+  function selectBright (value, onchange, steps, disabled) {
     var list = steps || STEPS
     var s = document.createElement('select')
+    s.disabled = !!disabled
     list.forEach(function (step) {
       s.appendChild(
         optionEl(String(step), percentLabel(step), quantize(value) === step)
@@ -507,6 +603,7 @@
 
   function renderTimeTable () {
     var body = document.getElementById('time-body')
+    var locked = !mappingEditable()
     body.innerHTML = ''
     timeRows.forEach(function (row, index) {
       var tr = document.createElement('tr')
@@ -519,7 +616,8 @@
           function (v) {
             patchRow(timeRows, index, { brightness: v })
           },
-          INTENT_STEPS
+          INTENT_STEPS,
+          locked
         )
       )
       body.appendChild(tr)
@@ -528,6 +626,7 @@
 
   function renderSunTable () {
     var body = document.getElementById('sun-body')
+    var locked = !mappingEditable()
     body.innerHTML = ''
     sunRows.forEach(function (row, index) {
       var tr = document.createElement('tr')
@@ -543,7 +642,8 @@
           ],
           function (v) {
             patchRow(sunRows, index, { mode: v })
-          }
+          },
+          locked
         )
       )
       appendCell(
@@ -553,7 +653,8 @@
           function (v) {
             patchRow(sunRows, index, { brightness: v })
           },
-          INTENT_STEPS
+          INTENT_STEPS,
+          locked
         )
       )
       body.appendChild(tr)
@@ -562,6 +663,7 @@
 
   function renderLuxTable () {
     var body = document.getElementById('lux-body')
+    var locked = !mappingEditable()
     body.innerHTML = ''
     luxRows.forEach(function (row, index) {
       var tr = document.createElement('tr')
@@ -570,13 +672,13 @@
         tr,
         numberInput(row.luxMin, function (v) {
           patchRow(luxRows, index, { luxMin: v })
-        })
+        }, locked)
       )
       appendCell(
         tr,
         numberInput(row.luxMax, function (v) {
           patchRow(luxRows, index, { luxMax: v })
-        })
+        }, locked)
       )
       appendCell(
         tr,
@@ -588,7 +690,8 @@
           ],
           function (v) {
             patchRow(luxRows, index, { mode: v })
-          }
+          },
+          locked
         )
       )
       appendCell(
@@ -598,24 +701,29 @@
           function (v) {
             patchRow(luxRows, index, { brightness: v })
           },
-          INTENT_STEPS
+          INTENT_STEPS,
+          locked
         )
       )
       var remove = document.createElement('button')
       remove.type = 'button'
       remove.className = 'hit'
       remove.textContent = 'Remove'
-      remove.addEventListener('click', function () {
-        luxRows.splice(index, 1)
-        renderMapping()
-        scheduleMappingSave()
-      })
+      remove.disabled = locked
+      if (!locked) {
+        remove.addEventListener('click', function () {
+          luxRows.splice(index, 1)
+          renderMapping()
+          scheduleMappingSave()
+        })
+      }
       appendCell(tr, remove)
       body.appendChild(tr)
     })
   }
 
   function appendNativeSelectAll (body) {
+    var locked = !mappingEditable()
     var tr = document.createElement('tr')
     tr.className = 'native-all'
     var th = document.createElement('th')
@@ -625,9 +733,15 @@
     appendCell(tr, cellText(''))
     appendCell(
       tr,
-      paletteSelect('navico', 'night', mappingPalettes.navicoNight, function (v) {
-        patchPalettes({ navicoNight: v })
-      })
+      paletteSelect(
+        'navico',
+        'night',
+        mappingPalettes.navicoNight,
+        function (v) {
+          patchPalettes({ navicoNight: v })
+        },
+        locked
+      )
     )
     appendCell(tr, cellText(''))
     appendCell(
@@ -638,34 +752,52 @@
         mappingPalettes.raymarineNight,
         function (v) {
           patchPalettes({ raymarineNight: v })
-        }
+        },
+        locked
       )
     )
     body.appendChild(tr)
   }
 
   function appendNativeRow (body, row, index, night) {
+    var locked = !mappingEditable()
     var tr = document.createElement('tr')
     appendCell(tr, cellText(percentLabel(row.brightness)))
     appendCell(
       tr,
-      selectBright(row.navicoBrightness, function (v) {
-        patchRow(nativeRows, index, { navicoBrightness: v })
-      })
+      selectBright(
+        row.navicoBrightness,
+        function (v) {
+          patchRow(nativeRows, index, { navicoBrightness: v })
+        },
+        null,
+        locked
+      )
     )
     if (night) {
       appendCell(
         tr,
-        paletteSelect('navico', 'night', mappingPalettes.navicoNight, function (v) {
-          patchPalettes({ navicoNight: v })
-        })
+        paletteSelect(
+          'navico',
+          'night',
+          mappingPalettes.navicoNight,
+          function (v) {
+            patchPalettes({ navicoNight: v })
+          },
+          locked
+        )
       )
     }
     appendCell(
       tr,
-      selectBright(row.raymarineBrightness, function (v) {
-        patchRow(nativeRows, index, { raymarineBrightness: v })
-      })
+      selectBright(
+        row.raymarineBrightness,
+        function (v) {
+          patchRow(nativeRows, index, { raymarineBrightness: v })
+        },
+        null,
+        locked
+      )
     )
     if (night) {
       appendCell(
@@ -676,7 +808,8 @@
           mappingPalettes.raymarineNight,
           function (v) {
             patchPalettes({ raymarineNight: v })
-          }
+          },
+          locked
         )
       )
     }
@@ -707,6 +840,7 @@
     renderLuxTable()
     renderNativeTable()
     renderLiveSources()
+    document.getElementById('lux-add').disabled = !mappingEditable()
   }
 
   function applyMappingBody (body) {
@@ -820,6 +954,9 @@
   }
 
   document.getElementById('lux-add').addEventListener('click', function () {
+    if (!mappingEditable()) {
+      return
+    }
     luxRows.push({
       luxMin: null,
       luxMax: null,

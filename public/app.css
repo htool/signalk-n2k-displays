@@ -37,6 +37,7 @@ body {
   background: var(--bg);
   color: var(--fg);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  touch-action: manipulation;
 }
 
 body {
@@ -112,6 +113,13 @@ body {
   transform: scale(0.98);
 }
 
+.hit:disabled,
+.bright input[type='range']:disabled,
+select:disabled,
+input:disabled {
+  opacity: 0.45;
+}
+
 .bright {
   display: flex;
   align-items: center;
@@ -119,14 +127,24 @@ body {
   margin-top: 12px;
 }
 
-.bright-read {
-  flex: 1;
-  text-align: center;
+.device .bright {
+  margin-top: 0;
+  margin-bottom: 8px;
 }
 
-#bright-value {
-  display: block;
-  font-size: 2rem;
+.bright input[type='range'] {
+  flex: 1;
+  min-height: var(--hit-size);
+  margin: 0;
+  touch-action: none;
+}
+
+.percent {
+  flex: 0 0 4.5rem;
+  width: 4.5rem;
+  text-align: right;
+  font-size: 1.25rem;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
 }
@@ -152,18 +170,6 @@ body {
 .device h3 {
   margin: 0 0 8px;
   font-size: 1rem;
-}
-
-.native {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.native-read {
-  flex: 1;
-  font-variant-numeric: tabular-nums;
 }
 
 .palette {

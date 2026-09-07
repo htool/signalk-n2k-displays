@@ -64,6 +64,11 @@ describe('intent paths', function () {
       'auto',
       'auto-learning'
     ])
+    INTENT_META[INTENT_PATHS.control].possibleValues.should.deep.equal([
+      { title: 'Manual', value: 'off' },
+      { title: 'Auto', value: 'auto' },
+      { title: 'Learning', value: 'auto-learning' }
+    ])
   })
 
   it('defaults to full brightness, day, off', function () {

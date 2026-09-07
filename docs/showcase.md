@@ -49,7 +49,7 @@ Palettes are **mode → native color**, not per brightness step ([ADR 0003](adr/
 
 Maps persist in `pluginDataDir/maps.json` ([ADR 0005](adr/0005-map-persistence.md)). Identity native is not written.
 
-Webapp: standalone `signalk-webapp`, PUT `/signalk/v1/api/vessels/self/...`. Phone-first. Chrome follows `prefers-color-scheme`. Mapping tables at `min-width: 900px`. Glass: Day, Night, Off.
+Webapp: standalone `signalk-webapp`, PUT `/signalk/v1/api/vessels/self/...`. Phone-first. Chrome follows `prefers-color-scheme`. Mapping tables at `min-width: 900px`. Control: Manual / Auto / Learning. Glass: Day, Night, Off. Brightness sliders 0–100% in 10% steps.
 
 ## Features (F0–F14)
 
@@ -58,7 +58,7 @@ Ordered slices; all rows below are done. Details in [features.md](features.md).
 | ID | Repo | What landed |
 | --- | --- | --- |
 | F0 | n2k-displays | Agent context, ADRs, feature list. |
-| F1 | signalk-to-nmea2000 | Navico PGN 130845 from vendor SK (backlight %, night 4/day 2, night color 0–4). |
+| F1 | signalk-to-nmea2000 | Navico PGN 130845 from vendor SK (backlight %, night 4/day 1, night color 0–4). |
 | F2 | signalk-to-nmea2000 | Raymarine Display Color from `electrical.displays.raymarine.<group>.color`. Brightness conversion already existed. |
 | F3 | n2k-displays | Intent paths published and PUT. |
 | F4 | n2k-displays | Stop emitting display PGNs; vendor SK only. |

@@ -185,9 +185,9 @@ export const INTENT_META: { [path: string]: any } = {
     displayName: 'Display lighting control',
     enum: ['off', 'auto', 'auto-learning'],
     possibleValues: [
-      { title: 'Off', value: 'off' },
+      { title: 'Manual', value: 'off' },
       { title: 'Auto', value: 'auto' },
-      { title: 'Auto-learning', value: 'auto-learning' }
+      { title: 'Learning', value: 'auto-learning' }
     ]
   }
 }

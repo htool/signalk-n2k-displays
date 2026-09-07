@@ -21,13 +21,21 @@ describe('F9 control webapp', function () {
     js.should.match(/electrical\.displays\.control/)
     js.should.match(/\/signalk\/v1\/api\/vessels\/self\//)
     js.should.match(/'off' \|\| value === 'auto' \|\| value === 'auto-learning'/)
+    js.should.match(/\['off', 'Manual'\]/)
+    js.should.match(/\['auto-learning', 'Learning'\]/)
+    js.should.match(/recordActiveSunLux/)
+    js.should.match(/liveEditable/)
+    js.should.match(/mappingEditable/)
   })
 
   it('is phone-first with 48px hit targets', function () {
+    html.should.match(/maximum-scale=1/)
     css.should.match(/--hit-size:\s*48px/)
     css.should.match(/min-height:\s*var\(--hit-size\)/)
     css.should.match(/min-width:\s*var\(--hit-size\)/)
-    html.should.match(/width=device-width/)
+    css.should.match(/touch-action:\s*manipulation/)
+    css.should.match(/input\[type='range'\]/)
+    css.should.match(/\.percent/)
   })
 
   it('follows the phone light/dark setting for chrome', function () {
@@ -37,10 +45,9 @@ describe('F9 control webapp', function () {
   })
 
   it('shows native scale and hides undeclared palettes', function () {
-    js.should.match(/Math\.round\(n \* 100\) \+ ' %'/)
-    js.should.not.match(/n \* 10\) \+ ' \/ 10'/)
+    js.should.match(/percentText/)
     js.should.match(/quantize\(Number\(value\)\)/)
-    js.should.match(/intentPercent\(brightness\) \+ ' %'/)
+    js.should.match(/slider\.type = 'range'/)
     js.should.match(/0\.1/)
     js.should.match(/modes: \['night'\]/)
     js.should.match(/navico/)

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1"
     />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -24,17 +24,7 @@
       <section class="block" aria-label="Glass mode">
         <h2>Glass</h2>
         <div class="row" id="mode-row"></div>
-        <div class="bright">
-          <button type="button" class="hit" id="bright-down" aria-label="Dimmer">
-            −
-          </button>
-          <div class="bright-read">
-            <span id="bright-value">100 %</span>
-          </div>
-          <button type="button" class="hit" id="bright-up" aria-label="Brighter">
-            +
-          </button>
-        </div>
+        <div id="glass-bright"></div>
       </section>
       <section class="block" aria-label="Instruments">
         <h2>Instruments</h2>
@@ -43,7 +33,7 @@
       <section id="mapping" class="block mapping" aria-label="Brightness mapping">
         <h2>Brightness mapping</h2>
         <p class="hint">
-          Large screen. Time, sun, and lux are the same plugin config as the admin form. Empty lux max is unbounded.
+          Learning: correct brightness as the day changes; the live Sun and Lux rows are stored. Then switch to Auto to lock. Manual ignores time/sun/lux and sends live changes. Empty lux max is unbounded.
         </p>
         <h3>
           Time

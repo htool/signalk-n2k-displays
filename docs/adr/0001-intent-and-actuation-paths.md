@@ -22,7 +22,7 @@ Intent is always 0–1. Drivers convert to native:
 | Raymarine | Percent 0–100 (path 0–1). Not 0–4 dim modes. | PGN 126720 Seatalk1 Display Brightness, field unit %. |
 | Garmin (later) | 0–20 = 0–100% in 5% steps | No write protocol in this plugin yet. |
 
-Navico night mode on the wire: 2 = Day, 4 = Night.
+Navico night mode on the wire: 1 = Day, 4 = Night. (2 also switches Zeus to day; keep 1 — that is Day Mode in the historic Parameter Handle table.)
 
 ## Why
 
