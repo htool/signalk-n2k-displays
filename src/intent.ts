@@ -168,13 +168,13 @@ export function intentDelta (path: string, value: any, meta: any) {
 
 export const INTENT_META: { [path: string]: any } = {
   [INTENT_PATHS.brightness]: {
-    displayName: 'Display brightness intent',
+    displayName: 'Display brightness',
     description: 'Skipper brightness 0–1 in 0.1 steps. Not a vendor native scale.',
     units: 'ratio',
     range: [0, 1]
   },
   [INTENT_PATHS.mode]: {
-    displayName: 'Display mode intent',
+    displayName: 'Display mode',
     enum: ['day', 'night'],
     possibleValues: [
       { title: 'Day', value: 'day' },

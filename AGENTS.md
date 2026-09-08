@@ -1,6 +1,6 @@
 # Agents
 
-This plugin owns **display lighting policy** for Navico/B&G and Raymarine glass: source → intent → per-device native values. It does **not** emit NMEA 2000.
+This plugin owns **display lighting policy** for Navico/B&G and Raymarine glass: source → skipper brightness 0–1 and day/night → per-device native values. It does **not** emit NMEA 2000.
 
 ## Read first
 
@@ -20,6 +20,6 @@ This plugin owns **display lighting policy** for Navico/B&G and Raymarine glass:
 | This plugin | Policy, maps, PUT, webapp. Writes Signal K only. |
 | [signalk-to-nmea2000](https://github.com/htool/signalk-to-nmea2000) | SK → N2K encode (canboatjs). Tests: expected vs produced n2k JSON. |
 | [signalk-bandg-displaydaynight](https://github.com/htool/signalk-bandg-displaydaynight) | Compat stub. Must not emit PGN 130845. |
-| [signalk-instrument-display-plugin](https://github.com/htool/signalk-instrument-display-plugin) | Consumer of intent brightness. Widescreen layouts stay there. |
+| [signalk-instrument-display-plugin](https://github.com/htool/signalk-instrument-display-plugin) | Consumer of glass brightness. Widescreen layouts stay there. |
 
 If a slice cannot be done from these files, fix the docs. Do not grow the prompt.

@@ -15,7 +15,7 @@ describe('F9 control webapp', function () {
     html.should.match(/app\.css/)
   })
 
-  it('PUTs v1 intent paths for live control', function () {
+  it('PUTs v1 glass paths for live control', function () {
     js.should.match(/electrical\.displays\.brightness/)
     js.should.match(/electrical\.displays\.mode/)
     js.should.match(/electrical\.displays\.control/)
@@ -36,6 +36,7 @@ describe('F9 control webapp', function () {
     css.should.match(/min-height:\s*var\(--hit-size\)/)
     css.should.match(/min-width:\s*var\(--hit-size\)/)
     css.should.match(/touch-action:\s*manipulation/)
+    css.should.match(/\.palette\s*\{[^}]*flex-wrap:\s*nowrap/)
     css.should.match(/input\[type='range'\]/)
     css.should.match(/\.percent/)
   })

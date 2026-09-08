@@ -4,7 +4,7 @@
 
 Learned brightness maps live in `maps.json` under `app.getDataDirPath()` (Signal K plugin data dir). Not plugin config. Not Signal K paths.
 
-Identity maps need no file: missing cells mean `native = quantize(intent)` on the vendor 0–1 path (step 0.1). Enabling a brand/group applies that identity (plus family palette defaults) as the start mapping. `auto` never writes the file. `auto-learning` writes cells when native or palette PUT changes a device.
+Identity maps need no file: missing cells mean `native = quantize(brightness)` on the vendor 0–1 path (step 0.1). Enabling a brand/group applies that identity (plus family palette defaults) as the start mapping. Auto never writes the file. Learning writes cells when native or palette PUT changes a device.
 
 Shape:
 
@@ -23,7 +23,7 @@ Shape:
 }
 ```
 
-Keys are device ids `vendor.group`. Intent steps are strings of the 0.1 grid. Brightness maps stay keyed by display `day`/`night`. Source bins (`environment.mode`, `environment.sun`, log-lux) drive intent; they are not native-map keys. Palettes are mode → native color and are omitted where the driver declares none.
+Keys are device ids `vendor.group`. Brightness steps are strings of the 0.1 grid. Brightness maps stay keyed by display `day`/`night`. Source bins (`environment.mode`, `environment.sun`, log-lux) drive glass brightness and mode; they are not native-map keys. Palettes are mode → native color and are omitted where the driver declares none.
 
 ## Why
 

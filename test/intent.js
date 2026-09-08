@@ -69,6 +69,16 @@ describe('intent paths', function () {
       { title: 'Auto', value: 'auto' },
       { title: 'Learning', value: 'auto-learning' }
     ])
+    INTENT_META[INTENT_PATHS.brightness].displayName.should.equal(
+      'Display brightness'
+    )
+    INTENT_META[INTENT_PATHS.mode].displayName.should.equal('Display mode')
+    String(INTENT_META[INTENT_PATHS.brightness].displayName).should.not.match(
+      /intent/i
+    )
+    String(INTENT_META[INTENT_PATHS.mode].displayName).should.not.match(
+      /intent/i
+    )
   })
 
   it('defaults to full brightness, day, off', function () {

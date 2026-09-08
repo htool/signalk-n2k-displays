@@ -287,7 +287,7 @@ export default function (app: any) {
           resync: {
             title: 'Device power-on resync',
             description:
-              'Re-apply last intent when a device path appears after silence (e.g. chartplotter boot). Path and source are case sensitive.',
+              'Re-apply last glass brightness and mode when a device path appears after silence (e.g. chartplotter boot). Path and source are case sensitive.',
             type: 'array',
             items: {
               type: 'object',

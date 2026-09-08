@@ -10,7 +10,7 @@ When control is `auto` or `auto-learning`, steering picks the first *fresh* read
 
 Vessel-wide. Not per group. Not a skipper picker. Default curves are in [architecture.md](../architecture.md); skippers may edit bins in the mapping table ([ADR 0007](0007-mapping-table-webapp.md)).
 
-Fresh means a value has been seen and is not older than 15 minutes (lux) or 5 minutes (sun, mode). Stale lux falls back to sun, then time. When lux reconnects, it takes over on the next lux delta. If none are fresh, keep last intent.
+Fresh means a value has been seen and is not older than 15 minutes (lux) or 5 minutes (sun, mode). Stale lux falls back to sun, then time. When lux reconnects, it takes over on the next lux delta. If none are fresh, keep last glass brightness and mode.
 
 The old `source` config enum is legacy. Do not use it to pin a single source.
 

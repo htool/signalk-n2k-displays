@@ -1,6 +1,6 @@
 # Migrating off `environment.displayMode`
 
-For one major this plugin **mirrors** glass intent onto the old blob and accepts the old PUT. Then the blob goes away.
+For one major this plugin **mirrors** glass brightness and mode onto the old blob and accepts the old PUT. Then the blob goes away.
 
 ## Read
 
@@ -19,8 +19,8 @@ Old Node-RED / `signalk-send-put` path `environment.displayMode.control`:
 { "mode": "night", "backlight": 3 }
 ```
 
-maps to brightness `0.3` and mode `night`. Optional `group` is ignored (intent is vessel-wide). Prefer PUT on `electrical.displays.brightness` and `electrical.displays.mode`.
+maps to brightness `0.3` and mode `night`. Optional `group` is ignored (glass is vessel-wide). Prefer PUT on `electrical.displays.brightness` and `electrical.displays.mode`.
 
 ## After this major
 
-Disable the mirror. `signalk-bandg-displaydaynight` is a stub that only forwards the old PUT onto intent and does not emit PGN 130845. Widescreen layouts in `signalk-instrument-display-plugin` read intent brightness, with a fallback to `.backlight` until this blob is unused.
+Disable the mirror. `signalk-bandg-displaydaynight` is a stub that only forwards the old PUT onto `electrical.displays` brightness and mode and does not emit PGN 130845. Widescreen layouts in `signalk-instrument-display-plugin` read `electrical.displays.brightness`, with a fallback to `.backlight` until this blob is unused.

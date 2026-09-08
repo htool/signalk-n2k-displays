@@ -21,7 +21,7 @@ Showcase lives on `htool/signalk-n2k-displays` branch `showcase/instrument-light
 
 ## Brightness is not SI-equal on glass
 
-A Zeus at intent 0.4 is not a Triton at 0.4. Maps exist because of that. Do not claim candela.
+A Zeus at brightness 0.4 is not a Triton at 0.4. Maps exist because of that. Do not claim candela.
 
 ## HEX
 

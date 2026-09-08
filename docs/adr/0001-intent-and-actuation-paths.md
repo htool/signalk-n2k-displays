@@ -1,8 +1,8 @@
-# ADR 0001 — Intent paths vs actuation paths
+# ADR 0001 — Glass paths vs actuation paths
 
 ## Decision
 
-Skipper intent lives on brand-neutral paths:
+Skipper glass lives on brand-neutral paths:
 
 - `electrical.displays.brightness` — 0–1, step 0.1
 - `electrical.displays.mode` — `day` | `night`
@@ -14,7 +14,7 @@ Hardware state stays on vendor groups that n2k-signalk already uses: `electrical
 
 ## Native scales (maps and webapp)
 
-Intent is always 0–1. Drivers convert to native:
+Glass brightness is always 0–1. Drivers convert to native:
 
 | Family | Brightness native | Wire (converter) |
 | --- | --- | --- |
@@ -26,7 +26,7 @@ Navico night mode on the wire: 1 = Day, 4 = Night. (2 also switches Zeus to day;
 
 ## Why
 
-`environment.displayMode` mixed source, intent, and actuation into one blob. Two plugins already disagreed on the contract. Intent belongs next to the hardware tree, not next to spec `environment.mode`.
+`environment.displayMode` mixed source, glass, and actuation into one blob. Two plugins already disagreed on the contract. Glass brightness and mode belong next to the hardware tree, not next to spec `environment.mode`.
 
 ## Consequences
 

@@ -39,9 +39,15 @@ Reserved leaves under `electrical.displays`: `brightness`, `mode`, `control`.
 
 ## Control and maps
 
-- **off:** live PUT only. Maps not applied (except power-on resync of last applied values).
-- **auto:** source cascade and maps apply. Nothing stored.
-- **auto-learning:** same apply, plus store native/palette cells on device PUT.
+Control is Manual / Auto / Learning (wire `off` / `auto` / `auto-learning`). Details: [ADR 0002](adr/0002-control-off-auto-learning.md).
+
+| Label | Wire | Sources | Glass | Mapping | Records Sun/Lux from glass | Learns `maps.json` |
+| --- | --- | --- | --- | --- | --- | --- |
+| Manual | `off` | Ignored | Actuates native immediately | Editable | No | No |
+| Auto | `auto` | lux → sun → time | Locked | Locked | No | No |
+| Learning | `auto-learning` | Same as Auto | Editable | Editable | Yes | Yes |
+
+Glass Off is brightness 0. Power-on resync still applies last glass brightness and mode in Manual.
 
 Source cascade ([ADR 0006](adr/0006-source-cascade-lux-sun-mode.md)): fresh lux (15 min) → sun (5 min) → `environment.mode` (5 min). Apply only on source-bin change so a live override survives derived-data ticks.
 
@@ -60,7 +66,7 @@ Ordered slices; all rows below are done. Details in [features.md](features.md).
 | F0 | n2k-displays | Agent context, ADRs, feature list. |
 | F1 | signalk-to-nmea2000 | Navico PGN 130845 from vendor SK (backlight %, night 4/day 1, night color 0–3). |
 | F2 | signalk-to-nmea2000 | Raymarine Display Color from `electrical.displays.raymarine.<group>.color`. Brightness conversion already existed. |
-| F3 | n2k-displays | Intent paths published and PUT. |
+| F3 | n2k-displays | Glass paths `electrical.displays.{brightness,mode,control}` published and PUT. |
 | F4 | n2k-displays | Stop emitting display PGNs; vendor SK only. |
 | F5 | n2k-displays | Identity brightness maps in `auto` / `auto-learning`. |
 | F6 | n2k-displays | Palette map mode → native color. |
@@ -68,7 +74,7 @@ Ordered slices; all rows below are done. Details in [features.md](features.md).
 | F8 | n2k-displays | Power-on resync when a configured device path appears. |
 | F9 | n2k-displays | Phone-first control webapp. |
 | F10 | n2k-displays | Deprecated `environment.displayMode` mirror + PUT. Migration: [displayMode-compat.md](displayMode-compat.md). |
-| F11 | bandg-displaydaynight | Stub: old blob PUT → intent paths. **No HEX 130845.** |
+| F11 | bandg-displaydaynight | Stub: old blob PUT → glass brightness and mode. **No HEX 130845.** |
 | F12 | instrument-display-plugin | CSS `filter: brightness(0–1)` from `electrical.displays.brightness`. Night chrome still `environment.mode`. Blob `.backlight / 10` until F10 unused. |
 | F13 | n2k-displays | Source cascade lux → sun → time (pulled ahead of F10 on the boat). |
 | F14 | n2k-displays | Mapping table: Time / Sun / Lux plus brand Day and Night (palettes on Night). |
@@ -79,11 +85,11 @@ Old Node-RED `signalk-send-put` on `environment.displayMode.control` `{ mode, ba
 
 ## Compat stub (F11)
 
-[signalk-bandg-displaydaynight](https://github.com/htool/signalk-bandg-displaydaynight) keeps plugin id `signalk-bandg-displaydayNight` so existing installs load. It forwards the old PUT onto intent and does not emit N2K. Disable it once nothing PUTs the blob. Policy, maps, and the webapp are here.
+[signalk-bandg-displaydaynight](https://github.com/htool/signalk-bandg-displaydaynight) keeps plugin id `signalk-bandg-displaydayNight` so existing installs load. It forwards the old PUT onto `electrical.displays` brightness and mode and does not emit N2K. Disable it once nothing PUTs the blob. Policy, maps, and the webapp are here.
 
 ## Widescreen consumer (F12)
 
-[signalk-instrument-display-plugin](https://github.com/htool/signalk-instrument-display-plugin) keeps B&G-style layouts. It dims `#display` from intent brightness and does not implement lighting policy.
+[signalk-instrument-display-plugin](https://github.com/htool/signalk-instrument-display-plugin) keeps B&G-style layouts. It dims `#display` from `electrical.displays.brightness` and does not implement lighting policy.
 
 ## Encode
 

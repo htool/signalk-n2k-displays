@@ -77,7 +77,7 @@ We pulled F13 (lux → sun → time cascade) **ahead of F10** during boat testin
 
 Conversation proposed; **ADRs locked**. Examples that actually constrained code:
 
-- [0001](https://github.com/htool/signalk-n2k-displays/blob/showcase/instrument-lighting/docs/adr/0001-intent-and-actuation-paths.md) — glass intent is `electrical.displays.{brightness,mode,control}`. Vessel day/night stays spec `environment.mode`. Do not grow the old blob except a one-major mirror.
+- [0001](https://github.com/htool/signalk-n2k-displays/blob/showcase/instrument-lighting/docs/adr/0001-intent-and-actuation-paths.md) — glass is `electrical.displays.{brightness,mode,control}`. Vessel day/night stays spec `environment.mode`. Do not grow the old blob except a one-major mirror.
 - [0003](https://github.com/htool/signalk-n2k-displays/blob/showcase/instrument-lighting/docs/adr/0003-palettes-are-device-native.md) — Raymarine 0/2/3/4 are palettes, not dim levels. Navico and Raymarine do not share a color enum.
 - [0004](https://github.com/htool/signalk-n2k-displays/blob/showcase/instrument-lighting/docs/adr/0004-converter-owns-n2k-encode.md) — plugins write Signal K; [signalk-to-nmea2000](https://github.com/htool/signalk-to-nmea2000) encodes. HEX only when the PGN is not understood. 130845 **is** understood.
 - [0006](https://github.com/htool/signalk-n2k-displays/blob/showcase/instrument-lighting/docs/adr/0006-source-cascade-lux-sun-mode.md) — fresh lux wins, then sun, then `environment.mode`. Stale readings fall back.
