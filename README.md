@@ -28,4 +28,4 @@ Phone-first lighting control. Bookmark `/signalk-n2k-displays/` when glass is un
 
 For one major, this plugin mirrors `{ mode, backlight: round(brightness×10) }` and accepts the old PUT on `environment.displayMode.control`. Migrate to `electrical.displays.brightness` (0–1) and `.mode`. Details: [docs/displayMode-compat.md](docs/displayMode-compat.md).
 
-Agents: start at [AGENTS.md](AGENTS.md). Features and ADRs are under [docs/](docs/). Showcase writeup: [docs/showcase.md](docs/showcase.md).
+Agents: start at [AGENTS.md](AGENTS.md) (`CLAUDE.md` is the same pointer). Features and ADRs are under [docs/](docs/). Process traps: [docs/dev-lessons.md](docs/dev-lessons.md). Showcase writeup: [docs/showcase.md](docs/showcase.md).

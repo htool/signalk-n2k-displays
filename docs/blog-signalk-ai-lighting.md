@@ -34,16 +34,27 @@ Keep knowledge small and indexed. Do not merge it into one giant `AGENTS.md`. Fi
 | Skills           | On-demand playbook (here: lighting maps and the control webapp).        |
 
 
-Token rule: **index + one relevant page**, never the tree. Scope card on the README so the next author (or agent) can see the job, the overlaps, and what this plugin is not.
+Those six cover **why**, **don’t invent**, **what next**, and **how to do this job**. They do not cover “we burned a day because the fork was stale” or “canboatjs packs Night mode color unlike backlight.” That folklore is not an ADR and not a gap. After the trial, Joel Koz pointed at Freeboard’s lessons log. We added a seventh *kind* of page, plus three cheap pointers that are not extra law:
+
+
+| Addition | Job |
+| --- | --- |
+| Lessons | [dev-lessons.md](dev-lessons.md) — process traps, grouped by phase. Read the section you are entering. |
+| `CLAUDE.md` | One line: `@AGENTS.md`. Do not copy the index into a second file. |
+| DeepWiki | Warm-up for **neighbour** repos (server, spec, n2k-signalk, canboat, freeboard-sk, upstream converter). MCP `https://mcp.deepwiki.com/mcp`. Not law vs an ADR here. |
+| PR template | “Which ADR? Or which gap?” Checkbox: “I almost worked around a core hole.” |
+
+
+Token rule: **index + one relevant page**, never the tree. Scope card on the README so the next author (or agent) can see the job, the overlaps, and what this plugin is not. Lessons load when you enter that phase, not on every session.
 
 Intended benefits, in one line each:
 
 - Cheaper Q&A (human and AI).
 - Plugins stop papering over core holes.
 - Overlap becomes a named split, not a second HEX emitter.
-- Folklore in Discord becomes a backlog.
+- Folklore in Discord becomes a backlog — or a lessons entry if it is a process trap.
 
-We did not implement the whole org plan (llms.txt, GitHub App, registry clustering). We implemented the **plugin-sized** slice and ran it until glass on the boat followed lux.
+We did not implement the whole org plan (llms.txt, GitHub App, registry clustering). We implemented the **plugin-sized** slice and ran it until glass on the boat followed lux. Then we wrote down the encode/fork traps so the next agent does not rediscover them.
 
 ## How development actually ran
 
@@ -53,7 +64,7 @@ We did not implement the whole org plan (llms.txt, GitHub App, registry clusteri
 
 **One pending row, one commit.** `features.md` is the queue. The agent implements the next `pending` line, links the ADR, and does not re-argue it. Done-when includes tests where the row says so.
 
-That is the whole loop. Later sessions load `AGENTS.md` + the lighting skill, not the Sunday alignment chat.
+That is the whole loop. Later sessions load `AGENTS.md` + the lighting skill, not the Sunday alignment chat. Encode or fork work also loads the matching section of [dev-lessons.md](dev-lessons.md). Tools that look for `CLAUDE.md` get the same index.
 
 ## Speed
 
@@ -96,6 +107,8 @@ On the boat, that last cascade earned its keep: GNSS `navigation.datetime` was s
 
 **Decisions survived boat taste.** Skipper-facing UI never says “intent.” Chrome follows the phone `prefers-color-scheme`, not vessel mode. Off is brightness 0, not a third `DisplayMode`. Those were conversation refinements written into the skill and webapp, then tested as strings in `test/webapp.js`.
 
+**Process traps got their own bucket.** Syncing the converter fork *before* adding Raymarine brightness, the 130845 `Spare`/`MinLength` packing, and night-color frames that parse but that Zeus ignores — none of that is a lighting ADR. It is [dev-lessons.md](dev-lessons.md). Append only when the trap is non-obvious and reusable. Boat-only notes (this Pi, this Tailscale hop, a stuck 2007 GNSS date) stay out of that file.
+
 ## When committed code breaks a decision
 
 Agents will still do it. Humans will still do it. The corpus is not a compiler. Treat ADRs as **law**, tests as **guards**, CI as **the rude friend**, and Discord as **the hallway**.
@@ -114,14 +127,13 @@ That is how F4 existed: converter first, then delete JSON-out. The temporary win
 
 ### 3. GitHub workflows (cheap, no PAT)
 
-These match the org proposal. Start as comments; block later if they stay noisy.
+The four showcase repos now have a short **PR template**: which ADR, which gap, and a checkbox for “I almost worked around a core hole.” That is the whole gate we wanted here. The rest still matches the org proposal as comments; block later if they stay noisy.
 
-- **PR template** — “Which ADR? Or which gap?” Checkbox: “I almost worked around a core hole.”
 - **CODEOWNERS** on `docs/adr/` and `AGENTS.md` so decision edits are reviewed.
 - **Warn, then fail** — PRs that touch `src/`** without touching `docs/adr|features.md|known-gaps.md` get a bot comment. After the culture sticks, make it required.
 - **Invariant greps in CI** — `signalk-server/src`, `nmea2000out` where the ADR forbids them. Fast, boring, effective.
 - **Architecture drift** — if you keep a module list in `docs/architecture.md`, fail when top-level dirs appear without a bullet (more relevant to the server than to a plugin).
-- **CodeRabbit / review** — ask it to flag ADR citations, not to invent architecture.
+- **CodeRabbit / review** — ask it to flag ADR citations, not to invent architecture. Do not copy Freeboard’s rebase/App Store PR machinery onto these plugins.
 
 Do not auto-fail “similar plugin exists.” False positives punish hardware drivers. Do fail “this plugin imports core `src/`.”
 
@@ -141,7 +153,7 @@ Do not:
 
 - Tell agents “see Discord.” They cannot retrieve it cheaply or stably.
 - Let a thumbs-up in chat supersede an ADR. Promote it: chat → issue → ADR → tests.
-- Put vessel-specific taste (this boat’s red night palette) in core skills. That stays in the plugin’s maps and the skipper’s webapp.
+- Put vessel-specific taste (this boat’s red night palette) in core skills or in [dev-lessons.md](dev-lessons.md). That stays in the plugin’s maps and the skipper’s webapp. Shared lessons are traps that would bite any fork.
 
 The lighting trial found a GNSS date of January 2007 because we were watching Discord-unrelated boat data. The *interpretation* (“derived-data is not wrong; the plotter clock is”) belongs in a comment or a derived-data issue, not in the lighting plugin.
 
@@ -154,13 +166,17 @@ The plugin slice is enough to recommend, without waiting for llms.txt:
 3. `features.md` as a queue when the work is a showcase or a migration, not as a second roadmap product.
 4. Tests that encode the bans.
 5. Discord as the hallway; GitHub labels `core-gap` and `needs-decision` as the cupboard.
+6. `docs/dev-lessons.md` — phase-grouped process traps. Append only when non-obvious and reusable; own small docs commit. One-machine and skipper-taste notes stay out.
+7. One-line `CLAUDE.md` that only references `AGENTS.md`.
+8. DeepWiki (web + MCP) as warm-up for **other** Signal K / canboat trees. If it disagrees with an ADR in *this* repo, the ADR and tests win. Weekly index will lag private branches.
+9. A short PR template: which ADR, which gap, “I almost worked around a core hole.”
 
-What we would **not** copy yet: a DisplayProvider invented in a plugin because Admin PUT auth is awkward. That stays a gap.
+What we would **not** copy yet: a DisplayProvider invented in a plugin because Admin PUT auth is awkward. That stays a gap. What we would **not** copy from Freeboard onto a plugin: a fat `AGENTS.md`, CodeRabbit-must-close-every-thread, rebase-only PRs, or DeepWiki as a substitute for `architecture.md` / ADRs. Do not auto-append every session; that fills the log with SSH timeouts.
 
 ## Closing
 
-The approach is not “let the model read the org.” It is **write the why in files the model is allowed to read**, slice the work so one commit cannot quietly revive HEX, and put overlap on a scope card so the next plugin does not clone the job.
+The approach is not “let the model read the org.” It is **write the why in files the model is allowed to read**, slice the work so one commit cannot quietly revive HEX, and put overlap on a scope card so the next plugin does not clone the job. Lessons-learned is the process cousin of known-gaps. DeepWiki is a cheaper way to read *other people’s* trees, not a sixth source of truth for glass lighting.
 
 Instrument lighting was the smallest honest trial we had. In two calendar days the four repos agreed on a pipeline, the converter owned 130845/126720, the stub stopped shouting HEX, and the boat’s glass followed a light meter even when the plotter thought it was January.
 
-That is the benefit. The workflow to keep it is: ADR, test, CI comment, Discord only to start the next ADR.
+That is the benefit. The workflow to keep it is: ADR, test, CI comment, Discord only to start the next ADR — and a lessons row when the next agent would otherwise pay the same fork or packing tax.

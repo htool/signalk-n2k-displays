@@ -13,6 +13,8 @@ This plugin owns **display lighting policy** for Navico/B&G and Raymarine glass:
 7. [skills/lighting/SKILL.md](skills/lighting/SKILL.md) — when the work is lighting, maps, or the control webapp
 8. Then `src/` — never import `signalk-server` `src/`
 
+When you enter coding, testing, or encode work, read that phase in [docs/dev-lessons.md](docs/dev-lessons.md).
+
 ## Overlap
 
 | Repo | Role |
@@ -21,5 +23,9 @@ This plugin owns **display lighting policy** for Navico/B&G and Raymarine glass:
 | [signalk-to-nmea2000](https://github.com/htool/signalk-to-nmea2000) | SK → N2K encode (canboatjs). Tests: expected vs produced n2k JSON. |
 | [signalk-bandg-displaydaynight](https://github.com/htool/signalk-bandg-displaydaynight) | Compat stub. Must not emit PGN 130845. |
 | [signalk-instrument-display-plugin](https://github.com/htool/signalk-instrument-display-plugin) | Consumer of glass brightness. Widescreen layouts stay there. |
+
+## Neighbour repos
+
+Warm-up only (not this lighting contract): [DeepWiki](https://deepwiki.com) and MCP `https://mcp.deepwiki.com/mcp` for `SignalK/signalk-server`, `SignalK/specification`, `SignalK/n2k-signalk`, `canboat/canboat`, `SignalK/freeboard-sk`, and upstream `SignalK/signalk-to-nmea2000`. If DeepWiki disagrees with an ADR here, the ADR and tests win.
 
 If a slice cannot be done from these files, fix the docs. Do not grow the prompt.

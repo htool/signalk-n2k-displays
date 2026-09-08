@@ -29,6 +29,10 @@ Live control PUTs v1 paths. Mapping GET/PUT `/plugins/signalk-n2k-displays/mappi
 
 Policy: Signal K path values. Encode: expected vs produced n2k JSON in the converter. Do not require a live bus for CI.
 
+## Lessons
+
+At session end, append to [docs/dev-lessons.md](../../docs/dev-lessons.md) only if the trap was **non-obvious and reusable**. Own small docs commit. No one-machine notes, skipper taste, or session dumps. Product law stays in ADRs and known-gaps.
+
 ## Do not
 
 - Import server `src/`.

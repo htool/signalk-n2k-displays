@@ -4,7 +4,7 @@ Branch `showcase/instrument-lighting` across four repos. This plugin owns **poli
 
 Boatnet (the live Signal K on the boat) is the demo: enable this plugin, enable the Navico and Raymarine conversions on signalk-to-nmea2000, bookmark `/signalk-n2k-displays/`.
 
-Narrative for core and plugin authors: [blog-signalk-ai-lighting.md](blog-signalk-ai-lighting.md) — how the Signal K AI approach ran on this showcase.
+Narrative for core and plugin authors: [blog-signalk-ai-lighting.md](blog-signalk-ai-lighting.md) — how the Signal K AI approach ran on this showcase. Agent corpus: `AGENTS.md` (index), one-line `CLAUDE.md`, [dev-lessons.md](dev-lessons.md) for process traps, DeepWiki for neighbour repos, PR template “which ADR / which gap?”
 
 ## Job
 
