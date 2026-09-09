@@ -13,7 +13,7 @@ This plugin owns **display lighting policy** for Navico/B&G and Raymarine glass:
 7. [skills/lighting/SKILL.md](skills/lighting/SKILL.md) — when the work is lighting, maps, or the control webapp
 8. Then `src/` — never import `signalk-server` `src/`
 
-When you enter coding, testing, or encode work, read that phase in [docs/dev-lessons.md](docs/dev-lessons.md).
+When you enter coding, testing, or encode work, read that phase in [docs/dev-lessons.md](docs/dev-lessons.md). Plugin-sized AI workflow: [signalk-ai-approach](https://github.com/htool/signalk-ai-approach).
 
 ## Overlap
 
