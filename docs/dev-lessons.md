@@ -2,6 +2,8 @@
 
 Process traps, not product law. ADRs, [known-gaps](known-gaps.md), and [architecture](architecture.md) still win. Read the section for the phase you are in.
 
+Org approach (retrieve, kit, workflow, CI): [Signal K AI approach](https://github.com/htool/signalk-ai-approach). This file is lighting-specific traps. If they disagree, this plugin’s ADRs still win.
+
 **Append** only if the trap was non-obvious and reusable — the next agent would otherwise rediscover it. Own small docs commit. No one-machine notes, skipper taste, or session dumps.
 
 ---
