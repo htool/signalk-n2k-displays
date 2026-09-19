@@ -280,4 +280,46 @@ describe('start mapping when a brand is enabled', function () {
     )
     loadMaps(dir).brightness['navico.group1'].day['0.4'].should.equal(0.2)
   })
+
+  it('writes ST60 lamp path when ST60 is enabled', function () {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'n2k-maps-'))
+    const app = mockApp(dir)
+    const plugin = createPlugin(app)
+    const props = enabledOnly(['group1'], ['helm1'])
+    props.raymarineProducts = { i70: true, st60: true }
+    plugin.start(props)
+    lastValue(app.messages, 'electrical.displays.raymarine.st60.brightness').should.equal(1)
+    lastValue(app.messages, 'electrical.displays.raymarine.helm1.brightness').should.equal(1)
+  })
+
+  it('skips i70 groups when only ST60 is enabled', function () {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'n2k-maps-'))
+    const app = mockApp(dir)
+    const plugin = createPlugin(app)
+    const props = enabledOnly(['group1'], ['helm1'])
+    props.raymarineProducts = { i70: false, st60: true }
+    plugin.start(props)
+    lastValue(app.messages, 'electrical.displays.raymarine.st60.brightness').should.equal(1)
+    chai.expect(lastValue(app.messages, 'electrical.displays.raymarine.helm1.brightness')).to.equal(undefined)
+    chai.expect(lastValue(app.messages, 'electrical.displays.raymarine.helm1.color')).to.equal(undefined)
+  })
+
+  it('reads nested Raymarine and Navico headings', function () {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'n2k-maps-'))
+    const app = mockApp(dir)
+    const plugin = createPlugin(app)
+    plugin.start({
+      raymarine: {
+        i70: false,
+        st60: true,
+        groups: { helm1: true }
+      },
+      navico: {
+        groups: { group1: true }
+      }
+    })
+    lastValue(app.messages, 'electrical.displays.raymarine.st60.brightness').should.equal(1)
+    chai.expect(lastValue(app.messages, 'electrical.displays.raymarine.helm1.brightness')).to.equal(undefined)
+    lastValue(app.messages, 'electrical.displays.navico.group1.brightness').should.equal(1)
+  })
 })

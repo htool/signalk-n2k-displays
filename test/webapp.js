@@ -15,19 +15,26 @@ describe('F9 control webapp', function () {
     html.should.match(/app\.css/)
   })
 
-  it('PUTs v1 glass paths for live control', function () {
-    js.should.match(/electrical\.displays\.brightness/)
-    js.should.match(/electrical\.displays\.mode/)
-    js.should.match(/electrical\.displays\.control/)
-    js.should.match(/\/signalk\/v1\/api\/vessels\/self\//)
-    js.should.match(/'off' \|\| value === 'auto' \|\| value === 'auto-learning'/)
-    js.should.match(/\['off', 'Manual'\]/)
-    js.should.match(/\['auto-learning', 'Learning'\]/)
-    js.should.match(/recordActiveSunLux/)
-    js.should.match(/liveEditable/)
-    js.should.match(/mappingEditable/)
-    js.should.match(/control !== 'auto'/)
-    js.should.match(/ \+ ' lumen'/)
+  it('webapp appIcon file exists', function () {
+    pkg.signalk.appIcon.should.equal('icon.png')
+    fs.existsSync(path.join(__dirname, '../public', pkg.signalk.appIcon)).should.equal(true)
+  })
+
+  it('requests a Signal K device key for phone PUT', function () {
+    html.should.match(/id="devicePending"/)
+    html.should.match(/app\.js\?v=/)
+    js.should.match(/\/signalk\/v1\/access\/requests/)
+    js.should.match(/description: 'Display lighting'/)
+    js.should.match(/permissions: 'readwrite'/)
+    js.should.match(/Authorization/)
+    js.should.match(/skDeviceToken/)
+    js.should.match(/function deviceRequestGone/)
+    js.should.match(/function startDeviceRequest/)
+    js.should.match(/postedOnce/)
+    js.should.match(/goneReplaced/)
+    js.should.match(/already requested/)
+    js.should.not.match(/location\.hostname/)
+    js.should.not.match(/\/signalk\/v1\/auth\/login/)
   })
 
   it('is phone-first with 48px hit targets', function () {

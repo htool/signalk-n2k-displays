@@ -10,7 +10,7 @@ Requires signalk-server 2.3.0 or newer.
 
 ## Control webapp
 
-Phone-first lighting control. Bookmark `/signalk-n2k-displays/` when glass is unreadable. Live PUT goes to v1 paths (`electrical.displays.*`). Control is **Manual**, **Auto**, or **Learning**. Time / Sun / Lux mapping is in the webapp on a large screen and in plugin config (same source). Brand **Day** and **Night** tables map brightness to B&G and Raymarine; Night has color next to each brand (select for all). Chrome follows the phone light/dark setting.
+Phone-first lighting control. Bookmark `/signalk-n2k-displays/` when glass is unreadable. Live PUT goes to v1 paths (`electrical.displays.*`). On a phone that is not logged into Signal K, the page requests a **device key** (`POST /signalk/v1/access/requests`, description **Display lighting**, no hostname). Approve it under Signal K → Security → Access Requests; the JWT is kept in `localStorage` (`skDeviceToken`, shared with Control Panel on the same origin) and sent as `Authorization: Bearer`. Control is **Manual**, **Auto**, or **Learning**. Time / Sun / Lux mapping is in the webapp on a large screen and in plugin config (same source). Brand **Day** and **Night** tables map brightness to B&G and Raymarine; Night has color next to each brand (select for all). Chrome follows the phone light/dark setting.
 
 ![Display lighting webapp on a phone in dark mode, Auto and Night selected, brightness 40%, Navico 40% red palette and Raymarine 40% Red/Black](docs/webapp.png)
 

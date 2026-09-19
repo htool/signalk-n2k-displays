@@ -71,6 +71,329 @@
   ]
   var STEPS = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
   var INTENT_STEPS = [1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
+  var TOKEN_KEY = 'skDeviceToken'
+  var CLIENT_KEY = 'skN2kDisplaysClientId'
+  var HREF_KEY = 'skN2kDisplaysHref'
+  var pendingEl = document.getElementById('devicePending')
+  var authToken = ''
+  var loggedIn = false
+  var authRequired = true
+  var devicePending = false
+  var pollTimer = null
+  var pollHref = ''
+  var deadHrefs = {}
+  var postInFlight = false
+  var postedOnce = false
+  var goneReplaced = false
+  var memoryClientId = ''
+  var memoryHref = ''
+
+  try {
+    authToken =
+      localStorage.getItem(TOKEN_KEY) ||
+      sessionStorage.getItem('skAuthToken') ||
+      ''
+  } catch (e) {}
+
+  function storageGet (key) {
+    try {
+      return localStorage.getItem(key) || ''
+    } catch (e) {
+      return ''
+    }
+  }
+
+  function storageSet (key, value) {
+    try {
+      localStorage.setItem(key, value)
+    } catch (e) {}
+  }
+
+  function storageDel (key) {
+    try {
+      localStorage.removeItem(key)
+    } catch (e) {}
+  }
+
+  function uuid () {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = (Math.random() * 16) | 0
+      var v = c === 'x' ? r : (r & 0x3) | 0x8
+      return v.toString(16)
+    })
+  }
+
+  function getClientId () {
+    if (memoryClientId) {
+      return memoryClientId
+    }
+    var id = storageGet(CLIENT_KEY)
+    if (!id) {
+      id = uuid()
+    }
+    memoryClientId = id
+    storageSet(CLIENT_KEY, id)
+    return memoryClientId
+  }
+
+  function saveToken (token) {
+    authToken = token || ''
+    if (authToken) {
+      storageSet(TOKEN_KEY, authToken)
+      try {
+        sessionStorage.setItem('skAuthToken', authToken)
+      } catch (e) {}
+    } else {
+      storageDel(TOKEN_KEY)
+      try {
+        sessionStorage.removeItem('skAuthToken')
+      } catch (e) {}
+    }
+  }
+
+  function setDevicePending (pending) {
+    devicePending = !!pending
+    if (pendingEl) {
+      pendingEl.hidden = !devicePending
+    }
+    if (devicePending && statusEl && statusEl.textContent === 'Connecting…') {
+      statusEl.textContent =
+        'Approve this device in Signal K → Security → Access Requests'
+    }
+  }
+
+  function apiFetch (url, opts) {
+    opts = opts || {}
+    var headers = {}
+    if (opts.headers) {
+      Object.keys(opts.headers).forEach(function (key) {
+        headers[key] = opts.headers[key]
+      })
+    }
+    if (opts.body && !headers['Content-Type']) {
+      headers['Content-Type'] = 'application/json'
+    }
+    if (authToken) {
+      headers.Authorization = 'Bearer ' + authToken
+    }
+    return fetch(url, {
+      method: opts.method || 'GET',
+      credentials: 'include',
+      headers: headers,
+      body: opts.body
+    })
+  }
+
+  function stopDevicePoll () {
+    if (pollTimer) {
+      clearInterval(pollTimer)
+      pollTimer = null
+    }
+  }
+
+  function deviceRequestGone (status, data) {
+    if (status === 404) {
+      return true
+    }
+    if (status !== 500) {
+      return false
+    }
+    var msg = ''
+    if (data) {
+      if (data.error) {
+        msg = String(data.error)
+      } else if (data.message) {
+        msg = String(data.message)
+      }
+    }
+    return (
+      msg.indexOf('not found') !== -1 ||
+      msg.indexOf('Unable to check request') !== -1
+    )
+  }
+
+  function applyLogin (token) {
+    if (token) {
+      saveToken(token)
+    }
+    loggedIn = true
+    setDevicePending(false)
+    stopDevicePoll()
+    storageDel(HREF_KEY)
+  }
+
+  function pollDeviceHref (href) {
+    apiFetch(href)
+      .then(function (res) {
+        return res.text().then(function (text) {
+          var data = {}
+          try {
+            data = text ? JSON.parse(text) : {}
+          } catch (err) {
+            data = { error: text }
+          }
+          return { status: res.status, data: data }
+        })
+      })
+      .then(function (result) {
+        if (deviceRequestGone(result.status, result.data)) {
+          deadHrefs[href] = true
+          stopDevicePoll()
+          if (memoryHref === href) {
+            memoryHref = ''
+          }
+          if (pollHref === href) {
+            pollHref = ''
+          }
+          storageDel(HREF_KEY)
+          if (!loggedIn && authRequired && !goneReplaced) {
+            goneReplaced = true
+            postedOnce = false
+            submitDeviceRequest()
+          }
+          return
+        }
+        var ar = result.data && result.data.accessRequest
+        if (ar && ar.permission === 'APPROVED' && ar.token) {
+          applyLogin(ar.token)
+          if (statusEl && statusEl.textContent.indexOf('Approve') === 0) {
+            statusEl.textContent = 'Live'
+          }
+          return
+        }
+        if (ar && ar.permission === 'DENIED') {
+          setDevicePending(false)
+          stopDevicePoll()
+          if (statusEl) {
+            statusEl.textContent = 'Device access was denied'
+          }
+        }
+      })
+      .catch(function () {})
+  }
+
+  function startHrefPoll (href) {
+    if (!href || deadHrefs[href]) {
+      return
+    }
+    pollHref = href
+    memoryHref = href
+    storageSet(HREF_KEY, href)
+    if (!pollTimer) {
+      pollTimer = setInterval(function () {
+        pollDeviceHref(pollHref)
+      }, 3000)
+    }
+    pollDeviceHref(href)
+  }
+
+  function submitDeviceRequest () {
+    if (postInFlight || loggedIn) {
+      return
+    }
+    postInFlight = true
+    postedOnce = true
+    apiFetch('/signalk/v1/access/requests', {
+      method: 'POST',
+      body: JSON.stringify({
+        clientId: getClientId(),
+        description: 'Display lighting',
+        permissions: 'readwrite'
+      })
+    })
+      .then(function (res) {
+        return res.text().then(function (text) {
+          var data = {}
+          try {
+            data = text ? JSON.parse(text) : {}
+          } catch (err) {
+            data = { error: text }
+          }
+          return { status: res.status, data: data }
+        })
+      })
+      .then(function (result) {
+        postInFlight = false
+        var data = result.data || {}
+        if (data.token) {
+          applyLogin(data.token)
+          return
+        }
+        if (data.accessRequest && data.accessRequest.token) {
+          applyLogin(data.accessRequest.token)
+          return
+        }
+        var already =
+          data.message && String(data.message).indexOf('already requested') !== -1
+        if (result.status === 400 && already) {
+          setDevicePending(true)
+          var keep = memoryHref || storageGet(HREF_KEY)
+          if (keep && !deadHrefs[keep]) {
+            startHrefPoll(keep)
+          }
+          return
+        }
+        if (result.status === 202 && data.href) {
+          setDevicePending(true)
+          startHrefPoll(data.href)
+          return
+        }
+        var href = memoryHref || storageGet(HREF_KEY)
+        if (href && !deadHrefs[href]) {
+          setDevicePending(true)
+          startHrefPoll(href)
+          return
+        }
+        if (result.status === 404) {
+          setDevicePending(false)
+          return
+        }
+        setDevicePending(true)
+      })
+      .catch(function () {
+        postInFlight = false
+        setDevicePending(true)
+      })
+  }
+
+  function startDeviceRequest () {
+    if (!authRequired || loggedIn || postInFlight) {
+      return
+    }
+    var href = memoryHref || storageGet(HREF_KEY)
+    if (href && !deadHrefs[href]) {
+      setDevicePending(true)
+      startHrefPoll(href)
+      return
+    }
+    if (postedOnce) {
+      setDevicePending(true)
+      return
+    }
+    submitDeviceRequest()
+  }
+
+  function checkLogin () {
+    return apiFetch('/skServer/loginStatus')
+      .then(function (res) {
+        return res.json().then(function (data) {
+          return { ok: res.ok, data: data }
+        })
+      })
+      .then(function (result) {
+        if (result.ok) {
+          authRequired = result.data.authenticationRequired !== false
+          loggedIn = result.data.status === 'loggedIn' || !!authToken
+        } else {
+          authRequired = true
+          loggedIn = !!authToken
+        }
+      })
+      .catch(function () {
+        authRequired = true
+        loggedIn = !!authToken
+      })
+  }
 
   function quantize (n) {
     var x = Math.min(1, Math.max(0, n))
@@ -93,12 +416,18 @@
     if (demo) {
       return
     }
-    fetch(putUrl(path), {
+    apiFetch(putUrl(path), {
       method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ value: value })
-    }).catch(function () {})
+    })
+      .then(function (res) {
+        if (res.status === 401) {
+          loggedIn = false
+          saveToken('')
+          startDeviceRequest()
+        }
+      })
+      .catch(function () {})
   }
 
   function applyPath (path, value) {
@@ -871,10 +1200,8 @@
   }
 
   function putMapping () {
-    fetch('/plugins/signalk-n2k-displays/mapping', {
+    apiFetch('/plugins/signalk-n2k-displays/mapping', {
       method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         time: timeRows,
         sun: sunRows,
@@ -942,7 +1269,7 @@
       applyMappingBody(defaultMappingTables())
       return Promise.resolve()
     }
-    return fetch('/plugins/signalk-n2k-displays/mapping', { credentials: 'include' })
+    return apiFetch('/plugins/signalk-n2k-displays/mapping')
       .then(function (res) {
         return res.json()
       })
@@ -1018,7 +1345,10 @@
 
   function subscribeWs () {
     var proto = location.protocol === 'https:' ? 'wss:' : 'ws:'
-    ws = new WebSocket(proto + '//' + location.host + '/signalk/v1/stream?subscribe=none')
+    var tokenQ = authToken ? '&token=' + encodeURIComponent(authToken) : ''
+    ws = new WebSocket(
+      proto + '//' + location.host + '/signalk/v1/stream?subscribe=none' + tokenQ
+    )
     ws.onopen = function () {
       backoff = 500
       statusEl.textContent = 'Live'
@@ -1053,7 +1383,7 @@
   }
 
   function loadTree () {
-    return fetch('/signalk/v1/api/vessels/self', { credentials: 'include' })
+    return apiFetch('/signalk/v1/api/vessels/self')
       .then(function (res) {
         if (!res.ok) {
           throw new Error('no signalk')
@@ -1090,14 +1420,22 @@
   if (demo) {
     seedDemo()
   } else {
-    loadMapping().then(function () {
-      return loadTree()
-    }).then(function (live) {
-      if (live) {
-        subscribeWs()
-      } else {
-        seedDemo()
-      }
-    })
+    loadMapping()
+      .then(function () {
+        return checkLogin()
+      })
+      .then(function () {
+        if (!loggedIn && authRequired) {
+          startDeviceRequest()
+        }
+        return loadTree()
+      })
+      .then(function (live) {
+        if (live) {
+          subscribeWs()
+        } else {
+          seedDemo()
+        }
+      })
   }
 })()

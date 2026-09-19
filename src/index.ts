@@ -110,6 +110,34 @@ function sunSchemaProperties () {
   return properties
 }
 
+function normalizeInstrumentConfig (properties: any): any {
+  const cfg = properties || {}
+  const ray = cfg.raymarine || {}
+  const nav = cfg.navico || {}
+  if (ray.groups && cfg.raymarineGroups === undefined) {
+    cfg.raymarineGroups = ray.groups
+  }
+  if (nav.groups && cfg.navicoGroups === undefined) {
+    cfg.navicoGroups = nav.groups
+  }
+  if (ray.groupMappings && cfg.groupMappings === undefined) {
+    cfg.groupMappings = ray.groupMappings
+  }
+  if (
+    (ray.i70 !== undefined || ray.st60 !== undefined) &&
+    cfg.raymarineProducts === undefined
+  ) {
+    cfg.raymarineProducts = { i70: ray.i70, st60: ray.st60 }
+  }
+  if (ray.dayColor != null && cfg.raymarineDayColor === undefined) {
+    cfg.raymarineDayColor = ray.dayColor
+  }
+  if (ray.nightColor != null && cfg.raymarineNightColor === undefined) {
+    cfg.raymarineNightColor = ray.nightColor
+  }
+  return cfg
+}
+
 export default function (app: any) {
   const error = app.error
   const debug = app.debug
@@ -129,7 +157,7 @@ export default function (app: any) {
 
   const plugin: Plugin = {
     start: function (properties: any) {
-      props = properties
+      props = normalizeInstrumentConfig(properties)
       maps =
         typeof app.getDataDirPath === 'function'
           ? loadMaps(app.getDataDirPath())
@@ -155,6 +183,7 @@ export default function (app: any) {
       setupRaymarineBrightness()
       setupRaymarineColor()
       setupRaymarineNightMode()
+      setupRaymarineSt60Brightness()
 
       setupSimradBrightness()
       setupSimradNightColor()
@@ -164,9 +193,11 @@ export default function (app: any) {
         subscribeToSources()
       }
 
-      if (properties.groupMappings && properties.groupMappings.length > 0) {
-        subscribeToSimnet(properties)
-        subscribeToRaymarine(properties)
+      if (groupMappings().length > 0) {
+        subscribeToSimnet()
+        if (raymarineI70Enabled()) {
+          subscribeToRaymarine()
+        }
       }
       applyStartMapping()
     },
@@ -182,51 +213,103 @@ export default function (app: any) {
       'Signal K Plugin that controls and syncs display devices from Raymarine and Navico devices',
 
     schema: () => {
-      const schema: any = {
+      const i70Groups: any = {
+        title: 'i70 network groups',
+        description: 'i70 / STNG only. Unused for ST60.',
         type: 'object',
-        description:
-          'Open the lighting webapp for control and the brightness mapping table (large screen): /signalk-n2k-displays/',
-        required: ['raymarineDayColor', 'raymarineNightColor'],
+        properties: {}
+      }
+      const navicoGroups: any = {
+        title: 'Enabled groups',
+        type: 'object',
+        properties: {}
+      }
+      Object.keys(raymarineDisplayGroups).forEach(key => {
+        i70Groups.properties[key] = {
+          type: 'boolean',
+          title: `${raymarineDisplayGroups[key]}`,
+          default: true
+        }
+      })
+      Object.keys(simradDisplayGroups).forEach(key => {
+        navicoGroups.properties[key] = {
+          type: 'boolean',
+          title: `${simradDisplayGroups[key]}`,
+          default: true
+        }
+      })
+      return {
+        type: 'object',
         properties: {
-          webapp: {
-            title: 'Lighting webapp',
+          raymarine: {
+            title: 'Raymarine ST60 / i70',
             description:
-              'Open /signalk-n2k-displays/ — mapping table is on a large screen. Live control is phone-first.',
-            type: 'string',
-            default: '/signalk-n2k-displays/',
-            readOnly: true
+              'ST60 is a bus-wide SeaTalk1 lamp (L0–L3). i70 uses STNG network groups and day/night color.',
+            type: 'object',
+            properties: {
+              st60: {
+                type: 'boolean',
+                title: 'ST60 / SeaTalk1',
+                description:
+                  'Instrument lamp only. One brightness for the whole SeaTalk1 bus; ignores i70 groups and colors.',
+                default: true
+              },
+              i70: {
+                type: 'boolean',
+                title: 'i70 / STNG',
+                description:
+                  'Shared brightness and color. Uses i70 day/night colors and i70 network groups below.',
+                default: true
+              },
+              dayColor: {
+                type: 'string',
+                title: 'i70 day color',
+                description: 'i70 / STNG only. ST60 has no palette.',
+                enum: Object.keys(raymarineColorMap),
+                enumNames: Object.values(raymarineColorMap),
+                default: 'day1'
+              },
+              nightColor: {
+                type: 'string',
+                title: 'i70 night color',
+                description: 'i70 / STNG only. ST60 has no palette.',
+                enum: Object.keys(raymarineColorMap),
+                enumNames: Object.values(raymarineColorMap),
+                default: 'red/black'
+              },
+              groups: i70Groups,
+              groupMappings: {
+                title: 'i70 ↔ Navico mappings',
+                description:
+                  'i70 / STNG only. Keep i70 network groups in sync with Navico groups. Unused for ST60.',
+                type: 'array',
+                items: {
+                  type: 'object',
+                  required: ['raymarineGroup', 'simradGroup'],
+                  properties: {
+                    raymarineGroup: {
+                      type: 'string',
+                      title: 'i70 network group',
+                      enum: Object.keys(raymarineDisplayGroups),
+                      enumNames: Object.values(raymarineDisplayGroups)
+                    },
+                    simradGroup: {
+                      type: 'string',
+                      title: 'Navico group',
+                      enum: Object.keys(simradDisplayGroups),
+                      enumNames: Object.values(simradDisplayGroups)
+                    }
+                  }
+                }
+              }
+            }
           },
-          raymarineNightColor: {
-            type: 'string',
-            title: 'Raymarine Night Color',
-            enum: Object.keys(raymarineColorMap),
-            enumNames: Object.values(raymarineColorMap),
-            default: 'red/black'
-          },
-          raymarineDayColor: {
-            type: 'string',
-            title: 'Raymarine Day Color',
-            enum: Object.keys(raymarineColorMap),
-            enumNames: Object.values(raymarineColorMap),
-            default: 'day1'
-          },
-          source: {
-            type: 'string',
-            title: 'Light steering source',
-            description:
-              'Unused. Auto uses lux, then sun, then time.',
-            enum: ['mode', 'sun', 'lux'],
-            enumNames: [
-              'Time (environment.mode)',
-              'Sun (environment.sun)',
-              'Lux'
-            ],
-            default: 'lux'
-          },
-          luxPath: {
-            type: 'string',
-            title: 'Path to outside lux',
-            default: DEFAULT_LUX_PATH
+          navico: {
+            title: 'Navico / B&G',
+            type: 'object',
+            properties: {
+              groups: navicoGroups
+            }
           },
           time: {
             title: 'Time (environment.mode)',
@@ -284,6 +367,24 @@ export default function (app: any) {
               }
             }
           },
+          luxPath: {
+            type: 'string',
+            title: 'Path to outside lux',
+            default: DEFAULT_LUX_PATH
+          },
+          source: {
+            type: 'string',
+            title: 'Light steering source',
+            description:
+              'Unused. Auto uses lux, then sun, then time.',
+            enum: ['mode', 'sun', 'lux'],
+            enumNames: [
+              'Time (environment.mode)',
+              'Sun (environment.sun)',
+              'Lux'
+            ],
+            default: 'lux'
+          },
           resync: {
             title: 'Device power-on resync',
             description:
@@ -312,60 +413,9 @@ export default function (app: any) {
                 }
               }
             }
-          },
-          navicoGroups: {
-            title: 'Enabled Navico Groups',
-            type: 'object',
-            properties: {}
-          },
-          raymarineGroups: {
-            title: 'Enabled Raymarine Groups',
-            type: 'object',
-            properties: {}
-          },
-          groupMappings: {
-            title: 'Display Group Mappings',
-            description:
-              'If you setup a mapping, the display settings will be kept in sync between your Raymarine and Navico devices in those groups',
-            type: 'array',
-            items: {
-              type: 'object',
-              required: ['raymarineGroup', 'simradGroup'],
-              properties: {
-                raymarineGroup: {
-                  type: 'string',
-                  title: 'Raymarine Group',
-                  enum: Object.keys(raymarineDisplayGroups),
-                  enumNames: Object.values(raymarineDisplayGroups)
-                },
-                simradGroup: {
-                  type: 'string',
-                  title: 'Navico Group',
-                  enum: Object.keys(simradDisplayGroups),
-                  enumNames: Object.values(simradDisplayGroups)
-                }
-              }
-            }
           }
         }
       }
-      Object.keys(simradDisplayGroups).forEach(key => {
-        let name = simradDisplayGroups[key]
-        schema.properties.navicoGroups.properties[key] = {
-          type: 'boolean',
-          title: `${name}`,
-          default: true
-        }
-      })
-      Object.keys(raymarineDisplayGroups).forEach(key => {
-        let name = raymarineDisplayGroups[key]
-        schema.properties.raymarineGroups.properties[key] = {
-          type: 'boolean',
-          title: `${name}`,
-          default: true
-        }
-      })
-      return schema
     },
 
     registerWithRouter: function (router: any) {
@@ -460,10 +510,13 @@ export default function (app: any) {
   }
 
   function enabledVendorIds (vendor: 'navico' | 'raymarine'): string[] {
+    if (vendor === 'raymarine' && !raymarineI70Enabled()) {
+      return []
+    }
     const groups =
       vendor === 'navico' ? simradDisplayGroups : raymarineDisplayGroups
     const config =
-      vendor === 'navico' ? props && props.navicoGroups : props && props.raymarineGroups
+      vendor === 'navico' ? navicoGroupsConfig() : raymarineGroupsConfig()
     return Object.keys(groups)
       .filter(group => groupEnabled(config, group))
       .map(group => deviceId(vendor, group))
@@ -509,7 +562,24 @@ export default function (app: any) {
   }
 
   function groupMappings (): any[] {
+    if (props && props.raymarine && props.raymarine.groupMappings) {
+      return props.raymarine.groupMappings
+    }
     return (props && props.groupMappings) || []
+  }
+
+  function navicoGroupsConfig (): any {
+    if (props && props.navico && props.navico.groups) {
+      return props.navico.groups
+    }
+    return props && props.navicoGroups
+  }
+
+  function raymarineGroupsConfig (): any {
+    if (props && props.raymarine && props.raymarine.groups) {
+      return props.raymarine.groups
+    }
+    return props && props.raymarineGroups
   }
 
   function learnNative (vendor: string, group: string, native: number) {
@@ -656,11 +726,12 @@ export default function (app: any) {
   }
 
   function setupRaymarineColor () {
+    if (!raymarineI70Enabled()) {
+      return
+    }
     Object.keys(raymarineDisplayGroups).forEach(group => {
       if (
-        props.raymarineGroups !== undefined &&
-        props.raymarineGroups[group] !== undefined &&
-        props.raymarineGroups[group] === false
+        !groupEnabled(raymarineGroupsConfig(), group)
       ) {
         return
       }
@@ -723,11 +794,12 @@ export default function (app: any) {
   }
 
   function setupRaymarineBrightness () {
+    if (!raymarineI70Enabled()) {
+      return
+    }
     Object.keys(raymarineDisplayGroups).forEach(group => {
       if (
-        props.raymarineGroups !== undefined &&
-        props.raymarineGroups[group] !== undefined &&
-        props.raymarineGroups[group] === false
+        !groupEnabled(raymarineGroupsConfig(), group)
       ) {
         return
       }
@@ -790,11 +862,12 @@ export default function (app: any) {
   }
 
   function setupRaymarineNightMode () {
+    if (!raymarineI70Enabled()) {
+      return
+    }
     Object.keys(raymarineDisplayGroups).forEach(group => {
       if (
-        props.raymarineGroups !== undefined &&
-        props.raymarineGroups[group] !== undefined &&
-        props.raymarineGroups[group] === false
+        !groupEnabled(raymarineGroupsConfig(), group)
       ) {
         return
       }
@@ -859,12 +932,62 @@ export default function (app: any) {
     })
   }
 
+  function setupRaymarineSt60Brightness () {
+    if (!raymarineST60Enabled()) {
+      return
+    }
+    const path = 'electrical.displays.raymarine.st60.brightness'
+    app.registerPutHandler(
+      'vessels.self',
+      path,
+      (_context: string, _path: string, value: any) => {
+        setRaymarineDisplayBrightness('st60', value)
+        app.handleMessage(plugin.id, {
+          updates: [
+            {
+              values: [
+                {
+                  path,
+                  value: value
+                }
+              ]
+            }
+          ]
+        })
+        return {
+          state: 'COMPLETED',
+          statusCode: 200
+        }
+      }
+    )
+    app.handleMessage(plugin.id, {
+      updates: [
+        {
+          values: [
+            {
+              path,
+              value: 0
+            }
+          ],
+          meta: [
+            {
+              path,
+              value: {
+                displayName: 'ST60 lamp',
+                units: 'ratio',
+                range: [0, 1]
+              }
+            }
+          ]
+        }
+      ]
+    })
+  }
+
   function setupSimradNightColor () {
     Object.keys(simradDisplayGroups).forEach(group => {
       if (
-        props.navicoGroups !== undefined &&
-        props.navicoGroups[group] !== undefined &&
-        props.navicoGroups[group] === false
+        !groupEnabled(navicoGroupsConfig(), group)
       ) {
         return
       }
@@ -930,9 +1053,7 @@ export default function (app: any) {
   function setupSimradBrightness () {
     Object.keys(simradDisplayGroups).forEach(group => {
       if (
-        props.navicoGroups !== undefined &&
-        props.navicoGroups[group] !== undefined &&
-        props.navicoGroups[group] === false
+        !groupEnabled(navicoGroupsConfig(), group)
       ) {
         return
       }
@@ -996,9 +1117,7 @@ export default function (app: any) {
   function setupSimradNightMode () {
     Object.keys(simradDisplayGroups).forEach(group => {
       if (
-        props.navicoGroups !== undefined &&
-        props.navicoGroups[group] !== undefined &&
-        props.navicoGroups[group] === false
+        !groupEnabled(navicoGroupsConfig(), group)
       ) {
         return
       }
@@ -1071,6 +1190,24 @@ export default function (app: any) {
     )
   }
 
+  function raymarineI70Enabled (): boolean {
+    const nested = props && props.raymarine
+    if (nested && nested.i70 !== undefined) {
+      return nested.i70 !== false
+    }
+    const products = props && props.raymarineProducts
+    return !products || products.i70 !== false
+  }
+
+  function raymarineST60Enabled (): boolean {
+    const nested = props && props.raymarine
+    if (nested && nested.st60 !== undefined) {
+      return nested.st60 === true
+    }
+    const products = props && props.raymarineProducts
+    return !!(products && products.st60 === true)
+  }
+
   function applyStartMapping () {
     applyBrightnessMaps(true)
     applyPaletteMaps(true)
@@ -1082,7 +1219,7 @@ export default function (app: any) {
     }
     hasApplied = true
     Object.keys(simradDisplayGroups).forEach(group => {
-      if (!groupEnabled(props.navicoGroups, group)) {
+      if (!groupEnabled(navicoGroupsConfig(), group)) {
         return
       }
       setSimradDisplayBrightness(
@@ -1095,20 +1232,33 @@ export default function (app: any) {
         )
       )
     })
-    Object.keys(raymarineDisplayGroups).forEach(group => {
-      if (!groupEnabled(props.raymarineGroups, group)) {
-        return
-      }
+    if (raymarineI70Enabled()) {
+      Object.keys(raymarineDisplayGroups).forEach(group => {
+        if (!groupEnabled(raymarineGroupsConfig(), group)) {
+          return
+        }
+        setRaymarineDisplayBrightness(
+          group,
+          mappedNative(
+            maps,
+            deviceId('raymarine', group),
+            intentState.mode,
+            intentState.brightness
+          )
+        )
+      })
+    }
+    if (raymarineST60Enabled()) {
       setRaymarineDisplayBrightness(
-        group,
+        'st60',
         mappedNative(
           maps,
-          deviceId('raymarine', group),
+          deviceId('raymarine', 'st60'),
           intentState.mode,
           intentState.brightness
         )
       )
-    })
+    }
   }
 
   function applyPaletteMaps (force?: boolean) {
@@ -1117,11 +1267,15 @@ export default function (app: any) {
     }
     const nightState = nativeNightModeState(intentState.mode)
     const rayDefaults = {
-      day: props.raymarineDayColor,
-      night: props.raymarineNightColor
+      day:
+        (props.raymarine && props.raymarine.dayColor) ||
+        props.raymarineDayColor,
+      night:
+        (props.raymarine && props.raymarine.nightColor) ||
+        props.raymarineNightColor
     }
     Object.keys(simradDisplayGroups).forEach(group => {
-      if (!groupEnabled(props.navicoGroups, group)) {
+      if (!groupEnabled(navicoGroupsConfig(), group)) {
         return
       }
       setSimradDisplayNightMode(group, nightState)
@@ -1134,24 +1288,26 @@ export default function (app: any) {
         setSimradDisplayNightColor(group, color)
       }
     })
-    Object.keys(raymarineDisplayGroups).forEach(group => {
-      if (!groupEnabled(props.raymarineGroups, group)) {
-        return
-      }
-      publishVendorPath(
-        `electrical.displays.raymarine.${group}.nightMode.state`,
-        nightState
-      )
-      const color = mappedPalette(
-        maps,
-        deviceId('raymarine', group),
-        intentState.mode,
-        rayDefaults
-      )
-      if (color !== undefined) {
-        setRaymarineDisplayColor(group, color)
-      }
-    })
+    if (raymarineI70Enabled()) {
+      Object.keys(raymarineDisplayGroups).forEach(group => {
+        if (!groupEnabled(raymarineGroupsConfig(), group)) {
+          return
+        }
+        publishVendorPath(
+          `electrical.displays.raymarine.${group}.nightMode.state`,
+          nightState
+        )
+        const color = mappedPalette(
+          maps,
+          deviceId('raymarine', group),
+          intentState.mode,
+          rayDefaults
+        )
+        if (color !== undefined) {
+          setRaymarineDisplayColor(group, color)
+        }
+      })
+    }
   }
 
   function luxPath (): string {
@@ -1309,8 +1465,14 @@ export default function (app: any) {
   }
 
   function setRaymarineDisplayNightMode (group: string, value: number) {
-    const dayColor = props.raymarineDayColor || 'day1'
-    const nightColor = props.raymarineNightColor || 'red/black'
+    const dayColor =
+      (props.raymarine && props.raymarine.dayColor) ||
+      props.raymarineDayColor ||
+      'day1'
+    const nightColor =
+      (props.raymarine && props.raymarine.nightColor) ||
+      props.raymarineNightColor ||
+      'red/black'
     setRaymarineDisplayColor(group, value === 1 ? nightColor : dayColor)
     publishVendorPath(
       `electrical.displays.raymarine.${group}.nightMode.state`,
@@ -1336,7 +1498,7 @@ export default function (app: any) {
     )
   }
 
-  function subscribeToSimnet (properties: any) {
+  function subscribeToSimnet () {
     let command = {
       context: 'vessels.self',
       subscribe: [
@@ -1364,11 +1526,9 @@ export default function (app: any) {
                 }
                 const value = vp.value
                 const group = getDisplayGroupName(path)
-                const mapping = properties.groupMappings.find(
-                  (mapping: any) => {
-                    return mapping.simradGroup === group
-                  }
-                )
+                const mapping = groupMappings().find((mapping: any) => {
+                  return mapping.simradGroup === group
+                })
                 if (mapping) {
                   const key = getKeyName(path)
                   const setter = raymarineSetter[key]
@@ -1391,7 +1551,7 @@ export default function (app: any) {
     )
   }
 
-  function subscribeToRaymarine (properties: any) {
+  function subscribeToRaymarine () {
     let command = {
       context: 'vessels.self',
       subscribe: [
@@ -1419,11 +1579,9 @@ export default function (app: any) {
                 }
                 const value = vp.value
                 const group = getDisplayGroupName(path)
-                const mapping = properties.groupMappings.find(
-                  (mapping: any) => {
-                    return mapping.raymarineGroup === group
-                  }
-                )
+                const mapping = groupMappings().find((mapping: any) => {
+                  return mapping.raymarineGroup === group
+                })
                 const key = getKeyName(path)
                 if (mapping) {
                   const setter = simradSetter[key]
@@ -1439,8 +1597,11 @@ export default function (app: any) {
                   }
                 }
                 if (key === 'color') {
-                  let isNightMode = properties.raymarineNightColor
-                    ? value === properties.raymarineNightColor
+                  const nightColor =
+                    (props.raymarine && props.raymarine.nightColor) ||
+                    props.raymarineNightColor
+                  let isNightMode = nightColor
+                    ? value === nightColor
                       ? 1
                       : 0
                     : value === 'red/black'

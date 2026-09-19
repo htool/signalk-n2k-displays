@@ -6,16 +6,20 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1"
     />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <title>Display lighting</title>
-    <link rel="stylesheet" href="app.css" />
+    <link rel="stylesheet" href="app.css?v=20260919once" />
   </head>
   <body>
     <main id="app" class="app">
       <header class="top">
         <h1>Display lighting</h1>
         <p id="status" class="status">Connecting…</p>
+        <p id="devicePending" class="status" hidden>
+          Approve this device in Signal K → Security → Access Requests
+        </p>
       </header>
       <section class="block" aria-label="Control">
         <h2>Control</h2>
@@ -123,6 +127,6 @@
         <p id="mapping-status" class="status"></p>
       </section>
     </main>
-    <script src="app.js"></script>
+    <script src="app.js?v=20260919once"></script>
   </body>
 </html>

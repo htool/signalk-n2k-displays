@@ -37,6 +37,7 @@
   },
   "signalk-plugin-enabled-by-default": true,
   "signalk": {
+    "appIcon": "icon.png",
     "displayName": "Display lighting"
   }
 }
